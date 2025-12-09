@@ -75,14 +75,26 @@ WSGI_APPLICATION = 'cattle_system.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'cattle',
+#        'USER': 'root',
+#        'PASSWORD': 'MyPass123',
+#        'HOST': 'localhost',
+#        'PORT': '3306', 
+#    }
+#}
+
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'cattle',
-        'USER': 'root',
-        'PASSWORD': 'MyPass123',
-        'HOST': 'localhost',
-        'PORT': '3306', 
+        'NAME': 'railway',                # MYSQLDATABASE from Railway
+        'USER': 'root',                    # MYSQLUSER
+        'PASSWORD': 'ZorRIPAaiQXAtRMEmvbxUerYmMQcNfvS',  # MYSQLPASSWORD
+        'HOST': 'shinkansen.proxy.rlwy.net',  # Railway Public TCP host
+        'PORT': '17888',                    # Railway Proxy Port
     }
 }
 
