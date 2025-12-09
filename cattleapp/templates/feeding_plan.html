@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Feeding Plans{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Daily Feeding Plans</h3>
+
+<!-- Add Feeding Plan Button -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#feedingModal" onclick="resetFeedingForm();">
+    Add New Feeding Plan
+</button>
+
+<!-- Feeding Plan Modal -->
+<div class="modal fade" id="feedingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add / Edit Feeding Plan</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="feedingForm" method="POST" action="{% url 'add_feeding_plan_ajax' %}">
+                    {% csrf_token %}
+
+                    <div class="card mb-3">
+                        <div class="card-header">Feeding Plan Information</div>
+                        <div class="card-body">
+
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Cow</label>
+                                    <select name="cow" class="form-control" required>
+                                        <option value="" disabled selected>Select Cow</option>
+                                        {% for cow in cows %}
+                                            <option value="{{ cow.id }}">{{ cow.tag_id }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Feed</label>
+                                    <select name="feed" class="form-control" required>
+                                        <option value="" disabled selected>Select Feed</option>
+                                        {% for feed in feeds %}
+                                            <option value="{{ feed.id }}">{{ feed.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Date</label>
+                                    <input type="date" name="date" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Quantity (kg)</label>
+                                    <input type="number" name="quantity_kg" step="0.01" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Recorded By</label>
+                                    <select name="recorded_by" class="form-control">
+                                        <option value="" selected>-- Select Staff --</option>
+                                        {% for staff in staff_members %}
+                                            <option value="{{ staff.id }}">{{ staff.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label>Notes</label>
+                                    <textarea name="notes" rows="2" class="form-control"></textarea>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <button type="submit" id="feedingSubmitBtn" class="btn btn-primary w-100">
+                        Save Feeding Plan
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Feeding Plan List -->
+<div class="card">
+    <div class="card-header bg-success text-white">Registered Feeding Plans</div>
+    <div class="card-body">
+        <table id="feedingTable" class="table table-bordered table-striped" style="width:100%">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Cow</th>
+                    <th>Feed</th>
+                    <th>Date</th>
+                    <th>Quantity (kg)</th>
+                    <th>Recorded By</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'cow/css/dataTables.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'cow/css/buttons.bootstrap5.min.css' %}">
+
+<style>
+.dataTables_wrapper .dt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.dt-buttons .btn-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+
+<!-- DataTables -->
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+
+<!-- Buttons -->
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+<script>
+$(document).ready(function () {
+
+    const csrftoken = document.cookie.split("; ")
+        .find(r => r.startsWith("csrftoken=")).split("=")[1];
+
+    // DATATABLE INITIALIZATION
+    let feedingTable = $('#feedingTable').DataTable({
+        responsive: true,
+        pageLength: 5,
+        dom:
+            "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        buttons: [
+            { extend: 'copy', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'excel', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'pdf', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'print', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } }
+        ],
+        columns: [
+            { data: null },
+            { data: "cow" },
+            { data: "feed" },
+            { data: "date" },
+            { data: "quantity_kg" },
+            { data: "recorded_by" },
+            { data: "notes" },
+            {
+                data: null,
+                defaultContent: `
+                    <button class="btn btn-sm btn-primary edit-plan">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-plan">Delete</button>
+                `
+            }
+        ],
+        rowCallback: function (row, data, index) {
+            let info = feedingTable.page.info();
+            $('td:eq(0)', row).html(info.start + index + 1);
+        }
+    });
+
+    // LOAD FEEDING PLANS
+    function loadFeedingPlans() {
+        $.get("{% url 'fetch_feeding_plans' %}", function (data) {
+            feedingTable.clear().rows.add(data).draw();
+        });
+    }
+    loadFeedingPlans();
+
+    // RESET FORM
+    window.resetFeedingForm = function () {
+        $("#feedingForm")[0].reset();
+        $("#feedingSubmitBtn").text("Save Feeding Plan")
+            .removeClass("btn-success")
+            .addClass("btn-primary");
+        $("#feedingForm").off("submit").on("submit", addFeedingPlan);
+    }
+
+    // ADD FEEDING PLAN
+    function addFeedingPlan(e) {
+        e.preventDefault();
+        $.ajax({
+            url: "{% url 'add_feeding_plan_ajax' %}",
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            data: $("#feedingForm").serialize(),
+            success: function (resp) {
+                $("#feedingModal").modal("hide");
+                loadFeedingPlans();
+                Swal.fire("Success", resp.message, "success");
+                resetFeedingForm();
+            }
+        });
+    }
+
+    // EDIT FEEDING PLAN
+    $("#feedingTable tbody").on("click", ".edit-plan", function () {
+        let plan = feedingTable.row($(this).parents("tr")).data();
+        let id = plan.id;
+
+        $.get(`/feed/plans/get/${id}/`, function (data) {
+            $("[name='cow']").val(data.cow);
+            $("[name='feed']").val(data.feed);
+            $("[name='date']").val(data.date);
+            $("[name='quantity_kg']").val(data.quantity_kg);
+            $("[name='notes']").val(data.notes);
+            $("[name='recorded_by']").val(data.recorded_by);
+
+            $("#feedingModal").modal("show");
+
+            $("#feedingSubmitBtn").text("Update Feeding Plan")
+                .removeClass("btn-primary")
+                .addClass("btn-success");
+
+            $("#feedingForm").off("submit").on("submit", function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: `/feed/plans/update/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    data: $(this).serialize(),
+                    success: function (resp) {
+                        $("#feedingModal").modal("hide");
+                        loadFeedingPlans();
+                        Swal.fire("Updated!", resp.message, "success");
+                        resetFeedingForm();
+                    }
+                });
+            });
+        });
+    });
+
+    // DELETE FEEDING PLAN
+    $("#feedingTable tbody").on("click", ".delete-plan", function () {
+        let plan = feedingTable.row($(this).parents("tr")).data();
+        let id = plan.id;
+
+        Swal.fire({
+            title: `Delete feeding plan for ${plan.cow}?`,
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete",
+            confirmButtonColor: "#d33"
+        }).then(result => {
+            if (result.isConfirmed) {
+                $.post(`/feed/plans/delete/${id}/`, { csrfmiddlewaretoken: csrftoken }, function (resp) {
+                    loadFeedingPlans();
+                    Swal.fire("Deleted", resp.message, "success");
+                });
+            }
+        });
+    });
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Feed Inventory{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Feed Inventory</h3>
+
+<!-- Add Feed Button -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#feedModal" onclick="resetFeedForm();">
+    Add New Feed
+</button>
+
+<!-- Feed Modal -->
+<div class="modal fade" id="feedModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add / Edit Feed</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="feedForm" method="POST" action="{% url 'add_feed_ajax' %}">
+                    {% csrf_token %}
+
+                    <div class="card mb-3">
+                        <div class="card-header">Feed Information</div>
+                        <div class="card-body">
+
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Name</label>
+                                    <input type="text" name="name" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Feed Type</label>
+                                    <select name="feed_type" class="form-control" required>
+                                        <option value="" disabled selected>Select Type</option>
+                                        <option value="hay">Hay</option>
+                                        <option value="silage">Silage</option>
+                                        <option value="concentrate">Concentrate</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Quantity (kg)</label>
+                                    <input type="number" name="quantity_kg" class="form-control" step="0.01" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Unit Price (per kg)</label>
+                                    <input type="number" name="unit_price" class="form-control" step="0.01" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Supplier</label>
+                                    <input type="text" name="supplier" class="form-control">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Expiry Date</label>
+                                    <input type="date" name="expiry_date" class="form-control">
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <button type="submit" id="feedSubmitBtn" class="btn btn-primary w-100">
+                        Save Feed
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Feed List -->
+<div class="card">
+    <div class="card-header bg-success text-white">Registered Feeds</div>
+    <div class="card-body">
+        <table id="feedTable" class="table table-bordered table-striped" style="width:100%">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Quantity (kg)</th>
+                    <th>Unit Price</th>
+                    <th>Supplier</th>
+                    <th>Expiry Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'cow/css/dataTables.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'cow/css/buttons.bootstrap5.min.css' %}">
+
+<style>
+.dataTables_wrapper .dt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.dt-buttons .btn-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+
+<!-- DataTables -->
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+
+<!-- Buttons -->
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+<script>
+$(document).ready(function () {
+
+    const csrftoken = document.cookie.split("; ")
+        .find(r => r.startsWith("csrftoken=")).split("=")[1];
+
+    // DATATABLE INITIALIZATION
+    let feedTable = $('#feedTable').DataTable({
+        responsive: true,
+        pageLength: 5,
+
+        dom:
+            "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+
+        buttons: [
+            { extend: 'copy', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'excel', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'pdf', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'print', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } }
+        ],
+
+        columns: [
+            { data: null },  
+            { data: "name" },
+            { data: "feed_type" },
+            { data: "quantity_kg" },
+            { data: "unit_price" },
+            { data: "supplier" },
+            { data: "expiry_date" },
+            {
+                data: null,
+                defaultContent: `
+                    <button class="btn btn-sm btn-primary edit-feed">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-feed">Delete</button>
+                `
+            }
+        ],
+
+        rowCallback: function (row, data, index) {
+            let info = feedTable.page.info();
+            $('td:eq(0)', row).html(info.start + index + 1);
+        }
+    });
+
+    // LOAD FEEDS
+    function loadFeeds() {
+        $.get("{% url 'fetch_feeds' %}", function (data) {
+            feedTable.clear().rows.add(data).draw();
+        });
+    }
+    loadFeeds();
+
+    // RESET FORM
+    window.resetFeedForm = function () {
+        $("#feedForm")[0].reset();
+        $("#feedSubmitBtn").text("Save Feed")
+            .removeClass("btn-success")
+            .addClass("btn-primary");
+        $("#feedForm").off("submit").on("submit", addFeed);
+    }
+
+    // ADD FEED
+    function addFeed(e) {
+        e.preventDefault();
+        $.ajax({
+            url: "{% url 'add_feed_ajax' %}",
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            data: $("#feedForm").serialize(),
+            success: function (resp) {
+                $("#feedModal").modal("hide");
+                loadFeeds();
+                Swal.fire("Success", resp.message, "success");
+                resetFeedForm();
+            }
+        });
+    }
+
+    // EDIT FEED
+    $("#feedTable tbody").on("click", ".edit-feed", function () {
+
+        let feed = feedTable.row($(this).parents("tr")).data();
+        let id = feed.id;
+
+        // FETCH SINGLE FEED
+        $.get(`/feed/inventory/get/${id}/`, function (data) {
+
+            $("[name='name']").val(data.name);
+            $("[name='feed_type']").val(data.feed_type);
+            $("[name='quantity_kg']").val(data.quantity_kg);
+            $("[name='unit_price']").val(data.unit_price);
+            $("[name='supplier']").val(data.supplier);
+            $("[name='expiry_date']").val(data.expiry_date);
+
+            $("#feedModal").modal("show");
+
+            // Set button for update
+            $("#feedSubmitBtn")
+                .text("Update Feed")
+                .removeClass("btn-primary")
+                .addClass("btn-success");
+
+            // Remove old submit and set new update handler
+            $("#feedForm").off("submit").on("submit", function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: `/feed/inventory/update/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    data: $(this).serialize(),
+                    success: function (resp) {
+                        $("#feedModal").modal("hide");
+                        loadFeeds();
+                        Swal.fire("Updated!", resp.message, "success");
+                        resetFeedForm();
+                    }
+                });
+            });
+        });
+    });
+
+    // DELETE FEED
+    $("#feedTable tbody").on("click", ".delete-feed", function () {
+        let feed = feedTable.row($(this).parents("tr")).data();
+        let id = feed.id;
+
+        Swal.fire({
+            title: `Delete ${feed.name}?`,
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete",
+            confirmButtonColor: "#d33"
+        }).then(result => {
+
+            if (result.isConfirmed) {
+                $.post(`/feed/inventory/delete/${id}/`,
+                    { csrfmiddlewaretoken: csrftoken },
+                    function (resp) {
+                        loadFeeds();
+                        Swal.fire("Deleted", resp.message, "success");
+                    }
+                );
+            }
+        });
+    });
+
+});
+</script>
+{% endblock %}

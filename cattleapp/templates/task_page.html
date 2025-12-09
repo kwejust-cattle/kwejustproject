@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Task Management{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Task Management</h3>
+
+<!-- Add Task Button -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#taskModal" onclick="resetTaskForm();">
+    Add New Task
+</button>
+
+<!-- Task Modal -->
+<div class="modal fade" id="taskModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add / Edit Task</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <form id="taskForm" method="POST">
+                    {% csrf_token %}
+
+                    <div class="card mb-3">
+                        <div class="card-header">Task Details</div>
+                        <div class="card-body">
+
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Assign To (Staff)</label>
+                                    <select name="staff" class="form-control" required>
+                                        <option value="" disabled selected>Select Staff</option>
+                                        {% for s in staff %}
+                                        <option value="{{ s.id }}">{{ s.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Task Title</label>
+                                    <input type="text" class="form-control" name="title" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Due Date</label>
+                                    <input type="date" class="form-control" name="due_date">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Status</label>
+                                    <select name="status" class="form-control">
+                                        <option value="Pending">Pending</option>
+                                        <option value="In Progress">In Progress</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label>Description</label>
+                                    <textarea name="description" rows="3" class="form-control"></textarea>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <button type="submit" id="taskSubmitBtn" class="btn btn-primary w-100">
+                        Save Task
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Task Table -->
+<div class="card">
+    <div class="card-header bg-success text-white">Task List</div>
+    <div class="card-body">
+        <table id="taskTable" class="table table-bordered table-striped">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Staff</th>
+                    <th>Title</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+
+<!-- DataTables -->
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+
+<!-- Buttons -->
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+<script>
+
+$(document).ready(function() {
+
+    const csrftoken = document.cookie.split("; ")
+        .find(r => r.startsWith("csrftoken=")).split("=")[1];
+
+    // DATATABLE INITIALIZATION
+    let taskTable = $('#taskTable').DataTable({
+        responsive: true,
+        pageLength: 5,
+
+        dom:
+            "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+
+        buttons: [
+    {
+        extend: 'copy',
+        className: 'btn btn-success',
+        exportOptions: { columns: ':not(:last-child)' }   // hides last column
+    },
+    {
+        extend: 'excel',
+        className: 'btn btn-success',
+        exportOptions: { columns: ':not(:last-child)' }
+    },
+    {
+        extend: 'pdf',
+        className: 'btn btn-success',
+        exportOptions: { columns: ':not(:last-child)' }
+    },
+    {
+        extend: 'print',
+        className: 'btn btn-success',
+        exportOptions: { columns: ':not(:last-child)' }
+    }
+],
+
+
+        columns: [
+            { data: null },
+            { data: "staff" },
+            { data: "title" },
+            { data: "due_date" },
+            { data: "status" },
+            {
+                data: null,
+                defaultContent: `
+                    <button class="btn btn-sm btn-primary edit-task">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-task">Delete</button>
+                `
+            }
+        ],
+
+        rowCallback: function(row, data, index) {
+            let info = taskTable.page.info();
+            $('td:eq(0)', row).html(info.start + index + 1);
+        }
+    });
+
+    // LOAD TASK LIST
+    function loadTasks() {
+        $.get("{% url 'fetch_tasks' %}", function(data) {
+            taskTable.clear().rows.add(data).draw();
+        });
+    }
+    loadTasks();
+
+    // RESET FORM
+    window.resetTaskForm = function () {
+        $("#taskForm")[0].reset();
+        $("#taskSubmitBtn").text("Save Task")
+            .removeClass("btn-success")
+            .addClass("btn-primary");
+
+        $("#taskForm").off("submit").on("submit", addTask);
+    }
+
+    // ADD TASK
+    function addTask(e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: "{% url 'add_task' %}",
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            data: $("#taskForm").serialize(),
+            success: function(resp) {
+                $("#taskModal").modal("hide");
+                loadTasks();
+                Swal.fire("Success", resp.message, "success");
+            }
+        });
+    }
+
+    // EDIT TASK
+    $("#taskTable tbody").on("click", ".edit-task", function() {
+
+        let task = taskTable.row($(this).parents("tr")).data();
+        let id = task.id;
+
+        $.get(`/tasks/get/${id}/`, function(data) {
+
+            $("[name='staff']").val(data.staff);
+            $("[name='title']").val(data.title);
+            $("[name='due_date']").val(data.due_date);
+            $("[name='status']").val(data.status);
+            $("[name='description']").val(data.description);
+
+            $("#taskModal").modal("show");
+
+            $("#taskSubmitBtn")
+                .text("Update Task")
+                .removeClass("btn-primary")
+                .addClass("btn-success");
+
+            $("#taskForm").off("submit").on("submit", function(e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: `/tasks/update/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    data: $("#taskForm").serialize(),
+                    success: function(resp) {
+                        $("#taskModal").modal("hide");
+                        loadTasks();
+                        Swal.fire("Updated!", resp.message, "success");
+                        resetTaskForm();
+                    }
+                });
+            });
+
+        });
+
+    });
+
+    // DELETE TASK
+    $("#taskTable tbody").on("click", ".delete-task", function() {
+
+        let task = taskTable.row($(this).parents("tr")).data();
+        let id = task.id;
+
+        Swal.fire({
+            title: `Delete "${task.title}"?`,
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Yes, delete"
+        }).then(result => {
+
+            if (result.isConfirmed) {
+
+                $.ajax({
+                    url: `/tasks/delete/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    success: function(resp) {
+                        Swal.fire("Deleted", resp.message, "success");
+                        loadTasks();
+                    }
+                });
+
+            }
+
+        });
+
+    });
+
+});
+</script>
+
+{% endblock %}

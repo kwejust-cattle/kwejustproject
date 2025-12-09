@@ -1,0 +1,126 @@
+{% extends 'adminpanel.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModals" id="btnAdd">
+        Add Suppliers
+    </button>
+
+    <table id="supplierTable" class="table table-bordered table-striped mt-4">
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Name/Company</th>
+                <th>Supplies</th>
+                <th>Location</th>
+                <th>Mobile Number</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+
+
+<!-- ADD MODAL -->
+<div class="modal fade" id="addModals">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addSupplierForm">
+                <!--Cross-Site Request Forgery-->
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Supplier</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label>Name/Company</label>
+                        <input type="text" class="form-control" id="name" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Supplies</label>
+                        <input type="text" class="form-control" id="supply" required />
+
+                    </div>
+                    <div class="mb-3">
+                        <label>Location</label>
+                        <input type="text" class="form-control" id="location" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Mobile Number</label>
+                        <input type="tel" class="form-control" id="phone" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Joined Date</label>
+                        <input type="date" class="form-control" id="sdate" required />
+                    </div>
+
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editModals">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <form id="editSupplierForm">
+                {% csrf_token %}
+                <input type="hidden" id="edit_id">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Supplier</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <label>Name/Company</label>
+                    <input type="text" class="form-control mb-2" id="edit_name" required />
+
+                    <label>Supplies</label>
+                    <input type="text" class="form-control mb-2" id="edit_supply" required />
+
+                    <label>Location</label>
+                    <input type="text" class="form-control mb-2" id="edit_location" required />
+
+                    <label>Mobile Number</label>
+                    <input type="tel" class="form-control mb-2" id="edit_phone" required />
+
+                    <label>Joined Date</label>
+                    <input type="date" class="form-control mb-2" id="edit_sdate" required />
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-success" type="submit">Update</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+

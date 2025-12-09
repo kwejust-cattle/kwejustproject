@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Feed Purchases{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Feed Purchases</h3>
+
+<!-- Add Purchase Button -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#purchaseModal" onclick="resetPurchaseForm();">
+    Add New Purchase
+</button>
+
+<!-- Purchase Modal -->
+<div class="modal fade" id="purchaseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add / Edit Feed Purchase</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="purchaseForm" method="POST" action="{% url 'add_feed_purchase_ajax' %}">
+                    {% csrf_token %}
+
+                    <div class="card mb-3">
+                        <div class="card-header">Purchase Details</div>
+                        <div class="card-body">
+
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Feed</label>
+                                    <select name="feed" class="form-control" required>
+                                        <option value="" disabled selected>Select Feed</option>
+                                        {% for feed in feeds %}
+                                            <option value="{{ feed.id }}">{{ feed.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Purchased By</label>
+                                    <select name="purchased_by" class="form-control">
+                                        <option value="" selected>-- Select Staff --</option>
+                                        {% for staff in staff_members %}
+                                            <option value="{{ staff.id }}">{{ staff.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Quantity (kg)</label>
+                                    <input type="number" step="0.01" name="quantity_kg" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Unit Price</label>
+                                    <input type="number" step="0.01" name="unit_price" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Purchase Date</label>
+                                    <input type="date" name="purchase_date" class="form-control" value="{{ today|date:'Y-m-d' }}">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Total Cost</label>
+                                    <input type="number" step="0.01" name="total_cost" class="form-control" readonly>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <button type="submit" id="purchaseSubmitBtn" class="btn btn-primary w-100">
+                        Save Purchase
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Purchases List -->
+<div class="card">
+    <div class="card-header bg-success text-white">Feed Purchases</div>
+    <div class="card-body">
+        <table id="purchaseTable" class="table table-bordered table-striped" style="width:100%">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Feed</th>
+                    <th>Quantity (kg)</th>
+                    <th>Unit Price</th>
+                    <th>Total Cost</th>
+                    <th>Purchase Date</th>
+                    <th>Purchased By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'cow/css/dataTables.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'cow/css/buttons.bootstrap5.min.css' %}">
+<style>
+.dataTables_wrapper .dt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.dt-buttons .btn-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+<script>
+$(document).ready(function () {
+
+    const csrftoken = document.cookie.split("; ")
+        .find(r => r.startsWith("csrftoken=")).split("=")[1];
+
+    // AUTO CALCULATE TOTAL COST
+    $("input[name='quantity_kg'], input[name='unit_price']").on("input", function() {
+        let qty = parseFloat($("input[name='quantity_kg']").val()) || 0;
+        let price = parseFloat($("input[name='unit_price']").val()) || 0;
+        $("input[name='total_cost']").val((qty * price).toFixed(2));
+    });
+
+    // DATATABLE INITIALIZATION
+    let purchaseTable = $('#purchaseTable').DataTable({
+        responsive: true,
+        pageLength: 5,
+        dom:
+            "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        buttons: [
+            { extend: 'copy', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'excel', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'pdf', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'print', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } }
+        ],
+        columns: [
+            { data: null },
+            { data: "feed" },
+            { data: "quantity_kg" },
+            { data: "unit_price" },
+            { data: "total_cost" },
+            { data: "purchase_date" },
+            { data: "purchased_by" },
+            {
+                data: null,
+                defaultContent: `
+                    <button class="btn btn-sm btn-primary edit-purchase">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-purchase">Delete</button>
+                `
+            }
+        ],
+        rowCallback: function (row, data, index) {
+            let info = purchaseTable.page.info();
+            $('td:eq(0)', row).html(info.start + index + 1);
+        }
+    });
+
+    // LOAD PURCHASES
+    function loadPurchases() {
+        $.get("{% url 'fetch_feed_purchases' %}", function (data) {
+            purchaseTable.clear().rows.add(data).draw();
+        });
+    }
+    loadPurchases();
+
+    // RESET FORM
+    window.resetPurchaseForm = function () {
+        $("#purchaseForm")[0].reset();
+        $("input[name='total_cost']").val('');
+        $("#purchaseSubmitBtn").text("Save Purchase")
+            .removeClass("btn-success")
+            .addClass("btn-primary");
+        $("#purchaseForm").off("submit").on("submit", addPurchase);
+    }
+
+    // ADD PURCHASE
+    function addPurchase(e) {
+        e.preventDefault();
+        $.ajax({
+            url: "{% url 'add_feed_purchase_ajax' %}",
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            data: $("#purchaseForm").serialize(),
+            success: function (resp) {
+                $("#purchaseModal").modal("hide");
+                loadPurchases();
+                Swal.fire("Success", resp.message, "success");
+                resetPurchaseForm();
+            }
+        });
+    }
+
+    // EDIT PURCHASE
+    $("#purchaseTable tbody").on("click", ".edit-purchase", function () {
+        let purchase = purchaseTable.row($(this).parents("tr")).data();
+        let id = purchase.id;
+
+        $.get(`/feed/purchases/get/${id}/`, function (data) {
+            $("[name='feed']").val(data.feed);
+            $("[name='quantity_kg']").val(data.quantity_kg);
+            $("[name='unit_price']").val(data.unit_price);
+            $("[name='total_cost']").val(data.total_cost);
+            $("[name='purchase_date']").val(data.purchase_date);
+            $("[name='purchased_by']").val(data.purchased_by);
+
+            $("#purchaseModal").modal("show");
+
+            $("#purchaseSubmitBtn")
+                .text("Update Purchase")
+                .removeClass("btn-primary")
+                .addClass("btn-success");
+
+            $("#purchaseForm").off("submit").on("submit", function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: `/feed/purchases/update/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    data: $(this).serialize(),
+                    success: function (resp) {
+                        $("#purchaseModal").modal("hide");
+                        loadPurchases();
+                        Swal.fire("Updated!", resp.message, "success");
+                        resetPurchaseForm();
+                    }
+                });
+            });
+        });
+    });
+
+    // DELETE PURCHASE
+    $("#purchaseTable tbody").on("click", ".delete-purchase", function () {
+        let purchase = purchaseTable.row($(this).parents("tr")).data();
+        let id = purchase.id;
+
+        Swal.fire({
+            title: `Delete ${purchase.feed}?`,
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete",
+            confirmButtonColor: "#d33"
+        }).then(result => {
+            if (result.isConfirmed) {
+                $.post(`/feed/purchases/delete/${id}/`, { csrfmiddlewaretoken: csrftoken }, function (resp) {
+                    loadPurchases();
+                    Swal.fire("Deleted", resp.message, "success");
+                });
+            }
+        });
+    });
+
+});
+</script>
+{% endblock %}

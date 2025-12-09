@@ -1,0 +1,43 @@
+/* =============================
+   THERMAL RECEIPT (58mm)
+   ============================= */
+.thermal-receipt {
+    width: 240px;       /* 58mm printers */
+    padding: 5px;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.thermal-receipt h4 {
+    text-align: center;
+    margin: 5px 0;
+}
+
+.receipt-line {
+    border-top: 1px dashed #000;
+    margin: 6px 0;
+}
+
+.receipt-footer {
+    text-align: center;
+    margin-top: 10px;
+    font-style: italic;
+}
+
+.receipt-table {
+    width: 100%;
+    font-size: 12px;
+}
+
+.receipt-table td {
+    padding: 2px 0;
+}
+
+.right {
+    text-align: right;
+}
+
+.bold {
+    font-weight: bold;
+}

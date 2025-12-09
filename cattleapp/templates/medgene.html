@@ -1,0 +1,87 @@
+{% extends 'adminpanel.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModalg" id="btnAdd">
+        Add GenericName
+    </button>
+
+    <table id="geneTable" class="table table-bordered table-striped mt-4">
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>Generic Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+
+
+<!-- ADD MODAL -->
+<div class="modal fade" id="addModalg">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addMedicineFormg">
+                <!--Cross-Site Request Forgery-->
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Generic Name</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label>Generic Name</label>
+                        <input type="text" class="form-control" id="name" required />
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editModalg">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <form id="editMedicineFormg">
+                {% csrf_token %}
+                <input type="hidden" id="edit_id">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Generic Name</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <label>Name</label>
+                    <input type="text" id="edit_name" class="form-control mb-2">
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-success" type="submit">Update</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}

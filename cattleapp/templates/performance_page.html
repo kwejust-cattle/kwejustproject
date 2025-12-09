@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Performance Log{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Performance Log</h3>
+
+<!-- Add Performance Button -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#performanceModal" onclick="resetPerformanceForm();">
+    Add Performance Log
+</button>
+
+<!-- Performance Modal -->
+<div class="modal fade" id="performanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add / Edit Performance</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <form id="performanceForm" method="POST">
+                    {% csrf_token %}
+
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+                            <label>Staff</label>
+                            <select name="staff" class="form-control" required>
+                                <option disabled selected>Select Staff</option>
+                                {% for s in staff %}
+                                <option value="{{ s.id }}">{{ s.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label>Task</label>
+                            <select name="task" class="form-control" required>
+                                <option disabled selected>Select Task</option>
+                                {% for t in tasks %}
+                                <option value="{{ t.id }}">{{ t.task_type }} - {{ t.assigned_to.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label>Score (1-10)</label>
+                            <input type="number" min="1" max="10" name="score" class="form-control" required>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label>Feedback</label>
+                            <textarea name="feedback" class="form-control" rows="2"></textarea>
+                        </div>
+
+                    </div>
+
+                    <button type="submit" id="performanceSubmitBtn" class="btn btn-primary w-100">
+                        Save Log
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Performance Table -->
+<div class="card">
+    <div class="card-header bg-success text-white">Performance Logs</div>
+    <div class="card-body">
+        <table id="performanceTable" class="table table-bordered table-striped">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Staff</th>
+                    <th>Task</th>
+                    <th>Score</th>
+                    <th>Feedback</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+
+<!-- DataTables -->
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+
+<!-- Buttons -->
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+
+<script>
+$(document).ready(function () {
+
+    const csrftoken = document.cookie.split("; ")
+        .find(r => r.startsWith("csrftoken=")).split("=")[1];
+
+    // DATATABLE INITIALIZATION
+    let performanceTable = $('#performanceTable').DataTable({
+        responsive: true,
+        pageLength: 5,
+
+        dom:
+            "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+
+        buttons: [
+            { extend: 'copy', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'excel', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'pdf', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'print', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } }
+        ],
+
+        columns: [
+            { data: null },
+            { data: "staff" },
+            { data: "task" },
+            { data: "score" },
+            { data: "feedback" },
+            { data: "date" },
+            {
+                data: null,
+                defaultContent: `
+                    <button class="btn btn-sm btn-primary edit-log">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-log">Delete</button>
+                `
+            }
+        ],
+
+        rowCallback: function (row, data, index) {
+            let info = performanceTable.page.info();
+            $('td:eq(0)', row).html(info.start + index + 1);
+        }
+    });
+
+    // LOAD PERFORMANCE
+    function loadPerformance() {
+        $.get("{% url 'fetch_performance' %}", function (data) {
+            performanceTable.clear().rows.add(data).draw();
+        });
+    }
+    loadPerformance();
+
+    // RESET FORM
+    window.resetPerformanceForm = function () {
+        $("#performanceForm")[0].reset();
+        $("#performanceSubmitBtn")
+            .text("Save Log")
+            .removeClass("btn-success")
+            .addClass("btn-primary");
+        $("#performanceForm").off("submit").on("submit", addPerformance);
+    }
+
+    // ADD PERFORMANCE
+    function addPerformance(e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: "{% url 'add_performance' %}",
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            data: $("#performanceForm").serialize(),
+            success: function (resp) {
+                $("#performanceModal").modal("hide");
+                Swal.fire("Success", resp.message, "success");
+                loadPerformance();
+            }
+        });
+    }
+
+    // EDIT PERFORMANCE
+    $("#performanceTable tbody").on("click", ".edit-log", function () {
+
+        let log = performanceTable.row($(this).parents("tr")).data();
+        let id = log.id;
+
+        $.get(`/performance/get/${id}/`, function (data) {
+
+            $("[name='staff']").val(data.staff);
+            $("[name='task']").val(data.task);
+            $("[name='score']").val(data.score);
+            $("[name='feedback']").val(data.feedback);
+
+            $("#performanceModal").modal("show");
+
+            $("#performanceSubmitBtn")
+                .text("Update Log")
+                .removeClass("btn-primary")
+                .addClass("btn-success");
+
+            $("#performanceForm").off("submit").on("submit", function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: `/performance/update/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    data: $("#performanceForm").serialize(),
+                    success: function (resp) {
+                        $("#performanceModal").modal("hide");
+                        Swal.fire("Updated!", resp.message, "success");
+                        loadPerformance();
+                        resetPerformanceForm();
+                    }
+                });
+
+            });
+
+        });
+
+    });
+
+    // DELETE PERFORMANCE
+    $("#performanceTable tbody").on("click", ".delete-log", function () {
+
+        let log = performanceTable.row($(this).parents("tr")).data();
+        let id = log.id;
+
+        Swal.fire({
+            title: "Delete this log?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Yes, delete"
+        }).then(result => {
+
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/performance/delete/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    success: function (resp) {
+                        Swal.fire("Deleted", resp.message, "success");
+                        loadPerformance();
+                    }
+                });
+            }
+
+        });
+
+    });
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance Management{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Attendance Management</h3>
+
+<!-- Add Attendance Button -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#attendanceModal" onclick="resetAttendanceForm();">
+    Add Attendance
+</button>
+
+<!-- Attendance Modal -->
+<div class="modal fade" id="attendanceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add / Edit Attendance</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <form id="attendanceForm" method="POST">
+                    {% csrf_token %}
+
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+                            <label>Staff</label>
+                            <select name="staff" class="form-control" required>
+                                <option disabled selected>Select Staff</option>
+                                {% for s in staff %}
+                                <option value="{{ s.id }}">{{ s.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label>Date</label>
+                            <input type="date" class="form-control" name="date" required>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label>Status</label>
+                            <select name="status" class="form-control" required>
+                                <option value="Present">Present</option>
+                                <option value="Absent">Absent</option>
+                                <option value="Late">Late</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label>Time In</label>
+                            <input type="time" class="form-control" name="time_in">
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label>Time Out</label>
+                            <input type="time" class="form-control" name="time_out">
+                        </div>
+
+                    </div>
+
+                    <button type="submit" id="attendanceSubmitBtn" class="btn btn-primary w-100">
+                        Save Attendance
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Attendance Table -->
+<div class="card">
+    <div class="card-header bg-success text-white">Attendance Records</div>
+    <div class="card-body">
+        <table id="attendanceTable" class="table table-bordered table-striped">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Staff</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                    <th>Time In</th>
+                    <th>Time Out</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+
+<!-- DataTables -->
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+
+<!-- Buttons -->
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+
+<script>
+
+$(document).ready(function () {
+
+    const csrftoken = document.cookie.split("; ")
+        .find(r => r.startsWith("csrftoken=")).split("=")[1];
+
+    // DATATABLE INITIALIZATION
+    let attendanceTable = $('#attendanceTable').DataTable({
+    responsive: true,
+    pageLength: 5,
+    dom:
+        "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+        "<'row'<'col-sm-12'tr>>" +
+        "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+    buttons: [
+        {
+            extend: 'copy',
+            className: 'btn btn-success',
+            exportOptions: { columns: ':not(:last-child)' }
+        },
+        {
+            extend: 'excel',
+            className: 'btn btn-success',
+            exportOptions: { columns: ':not(:last-child)' }
+        },
+        {
+            extend: 'pdf',
+            className: 'btn btn-success',
+            exportOptions: { columns: ':not(:last-child)' }
+        },
+        {
+            extend: 'print',
+            className: 'btn btn-success',
+            exportOptions: { columns: ':not(:last-child)' }
+        }
+    ],
+    columns: [
+        { data: null },
+        { data: "staff" },
+        { data: "date" },
+        { data: "status" },
+        { data: "time_in" },
+        { data: "time_out" },
+        {
+            data: null,
+            defaultContent: `
+                <button class="btn btn-sm btn-primary edit-att">Edit</button>
+                <button class="btn btn-sm btn-danger delete-att">Delete</button>
+            `
+        }
+    ],
+    rowCallback: function (row, data, index) {
+        let info = attendanceTable.page.info();
+        $('td:eq(0)', row).html(info.start + index + 1);
+    }
+});
+
+
+    // LOAD ATTENDANCE
+    function loadAttendance() {
+        $.get("{% url 'fetch_attendance' %}", function (data) {
+            attendanceTable.clear().rows.add(data).draw();
+        });
+    }
+    loadAttendance();
+
+    // RESET FORM
+    window.resetAttendanceForm = function () {
+        $("#attendanceForm")[0].reset();
+        $("#attendanceSubmitBtn")
+            .text("Save Attendance")
+            .removeClass("btn-success")
+            .addClass("btn-primary");
+        $("#attendanceForm").off("submit").on("submit", addAttendance);
+    }
+
+    // ADD ATTENDANCE
+    function addAttendance(e) {
+        e.preventDefault();
+
+        $.ajax({
+            url: "{% url 'add_attendance' %}",
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            data: $("#attendanceForm").serialize(),
+            success: function (resp) {
+                $("#attendanceModal").modal("hide");
+                loadAttendance();
+                Swal.fire("Success", resp.message, "success");
+            }
+        });
+    }
+
+    // EDIT ATTENDANCE
+    $("#attendanceTable tbody").on("click", ".edit-att", function () {
+
+        let att = attendanceTable.row($(this).parents("tr")).data();
+        let id = att.id;
+
+        $.get(`/attendance/get/${id}/`, function (data) {
+
+            $("[name='staff']").val(data.staff);
+            $("[name='date']").val(data.date);
+            $("[name='status']").val(data.status);
+            $("[name='time_in']").val(data.time_in);
+            $("[name='time_out']").val(data.time_out);
+
+            $("#attendanceModal").modal("show");
+
+            $("#attendanceSubmitBtn")
+                .text("Update Attendance")
+                .removeClass("btn-primary")
+                .addClass("btn-success");
+
+            $("#attendanceForm").off("submit").on("submit", function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: `/attendance/update/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    data: $("#attendanceForm").serialize(),
+                    success: function (resp) {
+                        $("#attendanceModal").modal("hide");
+                        loadAttendance();
+                        Swal.fire("Updated!", resp.message, "success");
+                        resetAttendanceForm();
+                    }
+                });
+            });
+
+        });
+
+    });
+
+    // DELETE ATTENDANCE
+    $("#attendanceTable tbody").on("click", ".delete-att", function () {
+
+        let att = attendanceTable.row($(this).parents("tr")).data();
+        let id = att.id;
+
+        Swal.fire({
+            title: "Delete this record?",
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#d33",
+            confirmButtonText: "Yes, delete"
+        }).then(result => {
+
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: `/attendance/delete/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    success: function (resp) {
+                        Swal.fire("Deleted", resp.message, "success");
+                        loadAttendance();
+                    }
+                });
+            }
+
+        });
+
+    });
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Disease Monitoring{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Disease Monitoring</h3>
+
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#diseaseModal" onclick="resetDiseaseForm();">
+    Add Disease Record
+</button>
+
+<!-- Disease Modal -->
+<div class="modal fade" id="diseaseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add / Edit Disease Record</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="diseaseForm" method="POST" action="{% url 'add_disease_ajax' %}">
+                    {% csrf_token %}
+
+                    <div class="card mb-3">
+                        <div class="card-header">Disease Details</div>
+                        <div class="card-body">
+
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Cow</label>
+                                    <select name="cow" class="form-control" required>
+                                        <option value="">Select Cow</option>
+                                        {% for cow in cows %}
+                                        <option value="{{ cow.id }}">{{ cow.tag_id }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Disease Name</label>
+                                    <input type="text" name="disease_name" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label>Symptoms</label>
+                                    <textarea name="symptoms" class="form-control" required></textarea>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Diagnosis Date</label>
+                                    <input type="date" name="diagnosis_date" class="form-control">
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Veterinarian</label>
+                                    <select name="veterinarian" class="form-control">
+                                        <option value="">Select Veterinarian</option>
+                                        {% for vet in vets %}
+                                        <option value="{{ vet.id }}">{{ vet.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Status</label>
+                                    <select name="status" class="form-control">
+                                        <option value="Ongoing">Ongoing</option>
+                                        <option value="Recovered">Recovered</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label>Notes</label>
+                                    <textarea name="notes" class="form-control"></textarea>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <button type="submit" id="diseaseSubmitBtn" class="btn btn-primary w-100">
+                        Save Record
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Disease Records Table -->
+<div class="card">
+    <div class="card-header bg-success text-white">Disease Records</div>
+    <div class="card-body">
+        <table id="diseaseTable" class="table table-bordered table-striped">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Cow</th>
+                    <th>Disease</th>
+                    <th>Symptoms</th>
+                    <th>Date</th>
+                    <th>Veterinarian</th>
+                    <th>Status</th>
+                    <th>Notes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'cow/css/dataTables.bootstrap5.min.css' %}">
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+
+<!-- Buttons -->
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+
+<script>
+$(document).ready(function () {
+
+    const csrf = document.cookie.split("=")[1];
+
+    let table = $("#diseaseTable").DataTable({
+        pageLength: 5,
+        dom:
+            "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+
+        buttons: [
+            { extend: 'copy', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'excel', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'pdf', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'print', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } }
+        ],
+
+        columns: [
+            { data: null },
+            { data: "cow__tag_id" },
+            { data: "disease_name" },
+            { data: "symptoms" },
+            { data: "diagnosis_date" },
+            { data: "veterinarian__name" },
+            { data: "status" },
+            { data: "notes" },
+            {
+                data: null,
+                defaultContent: `
+                    <button class="btn btn-sm btn-primary edit">Edit</button>
+                    <button class="btn btn-sm btn-danger delete">Delete</button>
+                `
+            }
+        ],
+        rowCallback: function (row, data, index) {
+            let info = table.page.info();
+            $('td:eq(0)', row).html(info.start + index + 1);
+        }
+    });
+
+    function loadData() {
+        $.get("{% url 'fetch_diseases' %}", function (data) {
+            table.clear().rows.add(data).draw();
+        });
+    }
+    loadData();
+
+    window.resetDiseaseForm = function () {
+        $("#diseaseForm")[0].reset();
+        $("#diseaseSubmitBtn").text("Save Record")
+            .removeClass("btn-success")
+            .addClass("btn-primary");
+
+        $("#diseaseForm").off().on("submit", addDisease);
+    }
+
+    function addDisease(e) {
+        e.preventDefault();
+        $.post("{% url 'add_disease_ajax' %}", $("#diseaseForm").serialize(), function (resp) {
+            $("#diseaseModal").modal("hide");
+            loadData();
+            Swal.fire("Success", resp.message, "success");
+        });
+    }
+
+    // EDIT
+    $("#diseaseTable tbody").on("click", ".edit", function () {
+        let record = table.row($(this).parents("tr")).data();
+
+        $.get(`/health/diseases/get/${record.id}/`, function (data) {
+            $("[name='cow']").val(data.cow);
+            $("[name='disease_name']").val(data.disease_name);
+            $("[name='symptoms']").val(data.symptoms);
+            $("[name='diagnosis_date']").val(data.diagnosis_date);
+            $("[name='veterinarian']").val(data.veterinarian);
+            $("[name='status']").val(data.status);
+            $("[name='notes']").val(data.notes);
+
+            $("#diseaseModal").modal("show");
+
+            $("#diseaseSubmitBtn").text("Update Record")
+                .removeClass("btn-primary")
+                .addClass("btn-success");
+
+            $("#diseaseForm").off().on("submit", function (e) {
+                e.preventDefault();
+                $.post(`/health/diseases/update/${record.id}/`,
+                    $(this).serialize(),
+                    function (resp) {
+                        $("#diseaseModal").modal("hide");
+                        loadData();
+                        Swal.fire("Updated!", resp.message, "success");
+                    });
+            });
+        });
+    });
+
+    // DELETE
+    $("#diseaseTable tbody").on("click", ".delete", function () {
+        let record = table.row($(this).parents("tr")).data();
+
+        Swal.fire({
+            title: `Delete disease record for ${record.cow__tag_id}?`,
+            icon: "warning",
+            showCancelButton: true
+        }).then(result => {
+            if (result.isConfirmed) {
+                $.post(`/health/diseases/delete/${record.id}/`,
+                    { csrfmiddlewaretoken: csrf },
+                    function (resp) {
+                        loadData();
+                        Swal.fire("Deleted", resp.message, "success");
+                    }
+                );
+            }
+        });
+    });
+
+});
+</script>
+
+{% endblock %}

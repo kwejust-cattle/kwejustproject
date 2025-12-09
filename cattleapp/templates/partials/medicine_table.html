@@ -1,0 +1,62 @@
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>ID</th><th>Name</th><th>Price</th><th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for m in medicines %}
+        <tr>
+            <td>{{ m.id }}</td>
+            <td>{{ m.name }}</td>
+            <td>{{ m.price }}</td>
+            <td>
+                <button class="btn btn-warning btn-sm edit-btn"
+                        data-id="{{ m.id }}"
+                        data-name="{{ m.name }}"
+                        data-price="{{ m.price }}"
+                        data-bs-toggle="modal"
+                        data-bs-target="#editMedicineModal">
+                    Edit
+                </button>
+
+                <button class="btn btn-danger btn-sm delete-btn"
+                        data-id="{{ m.id }}">
+                    Delete
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- PAGINATION -->
+<nav>
+    <ul class="pagination justify-content-center">
+
+        {% if medicines.has_previous %}
+        <li class="page-item">
+            <a href="#" class="page-link pagination-link"
+               data-page="{{ medicines.previous_page_number }}">
+               Previous
+            </a>
+        </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">
+                Page {{ medicines.number }} of {{ medicines.paginator.num_pages }}
+            </span>
+        </li>
+
+        {% if medicines.has_next %}
+        <li class="page-item">
+            <a href="#" class="page-link pagination-link"
+               data-page="{{ medicines.next_page_number }}">
+               Next
+            </a>
+        </li>
+        {% endif %}
+
+    </ul>
+</nav>

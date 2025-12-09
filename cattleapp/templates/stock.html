@@ -1,0 +1,120 @@
+{% extends 'adminpanel.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#batchModal" id="btnAdd">
+        Add Batch
+    </button>
+
+    <table id="batchTable" class="table table-bordered table-striped mt-4">
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>BatchNumber</th>
+                <th>Medicine</th>
+                <th>Quantity</th>
+                <th>CostPrice</th>
+                <th>SellingPrice</th>
+                <th>ExpiryDate</th>
+                <th>DateAdded</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+
+
+<!-- ADD MODAL -->
+<div class="modal fade" id="batchModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="batchForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Batch</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label>Medicine</label>
+                        <select class="form-control" id="medicine" required>
+                            <option value="">-- Select Medicine --</option>
+                        </select>
+                        <small class="text-muted">Select the medicine for this batch.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label>Batch Number</label>
+                        <input type="text" id="batch_number" class="form-control" required>
+                        <small class="text-muted">Unique identifier for this batch.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label>Quantity</label>
+                        <input type="number" id="quantity" class="form-control" required>
+                        <small class="text-muted">Number of units in this batch.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label>Cost Price</label>
+                        <input type="number" step="0.01" id="cost_price" class="form-control">
+                        <small class="text-muted">Purchase price per unit.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label>Selling Price</label>
+                        <input type="number" step="0.01" id="selling_price" class="form-control">
+                        <small class="text-muted">Selling price per unit.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label>Expiry Date</label>
+                        <input type="date" id="expiry_date" class="form-control" required>
+                        <small class="text-muted">Expiry date of the batch.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editbatchModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editbatchForm">
+                {% csrf_token %}
+                <input type="hidden" id="edit_id">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Batch</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <label>Medicine</label>
+                    <select class="form-control" id="edit_medicine" required>
+                        <option value="">-- Select Medicine --</option>
+                    </select>
+                    <label>Batch Number</label>
+                    <input type="text" id="edit_batch_number" class="form-control" required>
+                    <label>Quantity</label>
+                    <input type="number" id="edit_quantity" class="form-control" required>
+                    <label>Cost Price</label>
+                    <input type="number" step="0.01" id="edit_cost_price" class="form-control">
+
+                    <label>Selling Price</label>
+                    <input type="number" step="0.01" id="edit_selling_price" class="form-control">
+
+                    <label>Expiry Date</label>
+                    <input type="date" id="edit_expiry_date" class="form-control" required>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" type="submit">Update</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

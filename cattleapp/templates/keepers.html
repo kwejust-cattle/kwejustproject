@@ -1,0 +1,122 @@
+{% extends 'adminpanel.html' %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addModal" id="btnAdd">
+        Add Customers
+    </button>
+
+    <table id="customersTable" class="table table-bordered table-striped mt-4">
+        <thead>
+            <tr>
+                <th>S/N</th>
+                <th>First Name</th>
+                <th>Surname</th>
+                <th>Location</th>
+                <th>Start Date</th>
+                <th>Mobile Number</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+
+
+<!-- ADD MODAL -->
+<div class="modal fade" id="addModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addCustomerForm">
+                <!--Cross-Site Request Forgery-->
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Customer</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label>First Name</label>
+                        <input type="text" class="form-control" id="fname" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Surname</label>
+                        <input type="text" class="form-control" id="sname" required />
+                    </div>
+                    
+                     <div class="mb-3">
+                        <label>Location</label>
+                        <input type="text" class="form-control" id="location" required />
+                    </div>
+                     <div class="mb-3">
+                        <label>Start Date</label>
+                        <input type="date" class="form-control" id="date" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Mobile Number</label>
+                        <input type="tel" class="form-control" id="phone" required />
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary" type="submit">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <form id="editCustomerForm">
+                {% csrf_token %}
+                <input type="hidden" id="edit_id">
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Customer</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <label>First Name</label>
+                    <input type="text" class="form-control" id="edit_fname" required />
+
+                    <label>Surname</label>
+                    <input type="text" class="form-control" id="edit_sname" required />
+
+                    <label>Location</label>
+                    <input type="text" class="form-control" id="edit_location" required />
+
+                    <label>Start Date</label>
+                    <input type="date" class="form-control" id="edit_date" required />
+
+                    <label>Mobile Number</label>
+                    <input type="tel" class="form-control" id="edit_phone" required />
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-success" type="submit">Update</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+{% endblock %}

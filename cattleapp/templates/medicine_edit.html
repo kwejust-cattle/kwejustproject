@@ -1,0 +1,26 @@
+{% extends "adminpanel.html" %}
+{% block content %}
+
+<div class="container mt-5">
+
+    <h3>Edit Medicine</h3>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Medicine Name</label>
+            <input type="text" name="name" class="form-control" value="{{ medicine.name }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Price</label>
+            <input type="number" name="price" class="form-control" value="{{ medicine.price }}" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a href="{% url 'medicine_view' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+
+</div>
+
+{% endblock %}

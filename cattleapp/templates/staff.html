@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Management{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Staff Management</h3>
+
+<!-- Add Staff Button -->
+<a href="#" class="btn btn-primary mb-3">
+    <i class="fa fa-plus me-2"></i> Add Staff
+</a>
+
+<!-- Staff Table -->
+<div class="card p-3 shadow-sm">
+    <h5 class="fw-bold mb-3">Staff List</h5>
+
+    <table class="table table-bordered table-striped">
+        <thead class="table-dark">
+            <tr>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Phone</th>
+                <th>Assigned Tasks</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>John Kamau</td>
+                <td>Milker</td>
+                <td>0700 123 456</td>
+                <td>Milking, Cleaning</td>
+                <td>
+                    <button class="btn btn-sm btn-info">Edit</button>
+                    <button class="btn btn-sm btn-danger">Delete</button>
+                </td>
+            </tr>
+            <tr>
+                <td>Sarah Njeri</td>
+                <td>Veterinarian</td>
+                <td>0790 777 888</td>
+                <td>Vaccination, Health Checks</td>
+                <td>
+                    <button class="btn btn-sm btn-info">Edit</button>
+                    <button class="btn btn-sm btn-danger">Delete</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

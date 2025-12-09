@@ -1,0 +1,137 @@
+<nav id="sidebar">
+
+    <!-- Sidebar Title -->
+    <a href="{% url 'adminpanel' %}" class="fw-bold fs-5 text-center">🐄 CMS Dashboard</a>
+
+    <!-- Dashboard -->
+    <a href="{% url 'adminpanel' %}" class="{% if request.resolver_match.url_name == 'adminpanel' %}active{% endif %}">
+        <i class="fa fa-home me-2"></i> Dashboard
+    </a>
+
+    <!-- Cow & Herd -->
+    <a href="{% url 'view_cow' %}" class="{% if request.resolver_match.url_name == 'view_cow' %}active{% endif %}">
+        <i class="fa fa-cow me-2"></i> Cow & Herd
+    </a>
+
+    {% with request.resolver_match.url_name as current %}
+
+    <!-- Milk Production Dropdown -->
+    {% with 'milk_production_page milk_sales_page milk_buyer_page' as milk_pages %}
+    <a class="dropdown-btn {% if current in milk_pages.split %}active-parent{% endif %}">
+        <i class="fa fa-glass-whiskey me-2"></i> Milk Production
+        <i class="fa fa-caret-down float-end"></i>
+    </a>
+    <div class="dropdown-container" style="display: {% if current in milk_pages.split %}block{% else %}none{% endif %}">
+        <a href="{% url 'milk_production_page' %}" class="{% if current == 'milk_production_page' %}active{% endif %}">➤ Daily Production</a>
+        <a href="{% url 'milk_sales_page' %}" class="{% if current == 'milk_sales_page' %}active{% endif %}">➤ Milk Sales</a>
+        <a href="{% url 'milk_buyer_page' %}" class="{% if current == 'milk_buyer_page' %}active{% endif %}">➤ Milk Buyer</a>
+    </div>
+    {% endwith %}
+
+    <!-- Health & Veterinary Dropdown -->
+    {% with 'vaccination_scheduler deworming_reminders disease_monitoring treatment_history' as health_pages %}
+    <a class="dropdown-btn {% if current in health_pages.split %}active-parent{% endif %}">
+        <i class="fa fa-syringe me-2"></i> Health & Veterinary
+        <i class="fa fa-caret-down float-end"></i>
+    </a>
+    <div class="dropdown-container" style="display: {% if current in health_pages.split %}block{% else %}none{% endif %}">
+        <a href="{% url 'vaccination_scheduler' %}" class="{% if current == 'vaccination_scheduler' %}active{% endif %}">➤ Vaccination Scheduler</a>
+        <a href="{% url 'deworming_reminders' %}" class="{% if current == 'deworming_reminders' %}active{% endif %}">➤ Deworming Reminders</a>
+        <a href="{% url 'disease_monitoring' %}" class="{% if current == 'disease_monitoring' %}active{% endif %}">➤ Disease Monitoring</a>
+        <a href="{% url 'treatment_history' %}" class="{% if current == 'treatment_history' %}active{% endif %}">➤ Treatment History</a>
+    </div>
+    {% endwith %}
+
+    <!-- Feed & Nutrition Dropdown -->
+{% with 'feed_inventory_page feeding_plan_page feed_purchase_page' as feed_pages %}
+<a class="dropdown-btn {% if current in feed_pages.split %}active-parent{% endif %}">
+    <i class="fa fa-leaf me-2"></i> Feed & Nutrition
+    <i class="fa fa-caret-down float-end"></i>
+</a>
+<div class="dropdown-container" style="display: {% if current in feed_pages.split %}block{% else %}none{% endif %}">
+    <!-- A. Feed Inventory -->
+    <a href="{% url 'feed_inventory_page' %}" class="{% if current == 'feed_inventory_page' %}active{% endif %}">➤ Feed Inventory</a>
+    <!-- B. Daily Feeding Plans -->
+    <a href="{% url 'feeding_plan_page' %}" class="{% if current == 'feeding_plan_page' %}active{% endif %}">➤ Daily Feeding Plans</a>
+    <!-- C. Feed Cost Tracking / Purchases -->
+    <a href="{% url 'feed_purchase_page' %}" class="{% if current == 'feed_purchase_page' %}active{% endif %}">➤ Feed Cost Tracking</a>
+</div>
+{% endwith %}
+
+    <!-- Staff Dropdown -->
+    {% with 'staff_register_page task_page attendance_page performance_page' as staff_pages %}
+    <a class="dropdown-btn {% if current in staff_pages.split %}active-parent{% endif %}">
+        <i class="fa fa-users me-2"></i> Staff
+        <i class="fa fa-caret-down float-end"></i>
+    </a>
+    <div class="dropdown-container" style="display: {% if current in staff_pages.split %}block{% else %}none{% endif %}">
+        <a href="{% url 'staff_register_page' %}" class="{% if current == 'staff_register_page' %}active{% endif %}">➤ Staff Register</a>
+        <a href="{% url 'task_page' %}" class="{% if current == 'task_page' %}active{% endif %}">➤ Task Assignment</a>
+        <a href="{% url 'attendance_page' %}" class="{% if current == 'attendance_page' %}active{% endif %}">➤ Attendance</a>
+        <a href="{% url 'performance_page' %}" class="{% if current == 'performance_page' %}active{% endif %}">➤ Performance Log</a>
+    </div>
+    {% endwith %}
+
+    {% endwith %}
+
+    <!-- Financial Reports -->
+    <a href="#" class="{% if request.resolver_match.url_name == 'financial_reports' %}active{% endif %}">
+        <i class="fa fa-chart-line me-2"></i> Financial Reports
+    </a>
+
+    <!-- Alerts & Analytics -->
+    <a href="#" class="{% if request.resolver_match.url_name == 'alerts_analytics' %}active{% endif %}">
+        <i class="fa fa-bell me-2"></i> Alerts & Analytics
+    </a>
+
+</nav>
+
+
+<!-- ====================== -->
+<!--       CSS              -->
+<!-- ====================== -->
+<style>
+    #sidebar { background-color: #218838; min-height: 100vh; padding-top: 20px; }
+    #sidebar a { display: block; padding: 10px 20px; color: white; text-decoration: none; transition: 0.3s; }
+    #sidebar a:hover { background-color: #1e7e34; }
+    #sidebar a.active { background-color: #1e7e34; font-weight: bold; }
+    #sidebar .active-parent { background-color: #145c2c !important; font-weight: bold; border-left: 4px solid #9be7b4; }
+    .dropdown-container a.active { background-color: #2c8f48 !important; font-weight: bold; }
+    .dropdown-container { display: none; background: #1c1c1c; padding-left: 15px; }
+</style>
+
+<!-- ====================== -->
+<!--       SCRIPT           -->
+<!-- ====================== -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const dropdowns = document.querySelectorAll(".dropdown-btn");
+
+    dropdowns.forEach(btn => {
+        const content = btn.nextElementSibling;
+
+        // Toggle dropdown on parent click
+        btn.addEventListener("click", function () {
+            const isOpen = content.style.display === "block";
+            content.style.display = isOpen ? "none" : "block";
+        });
+
+        // Collapse parent dropdown when a sublink is clicked
+        const sublinks = content.querySelectorAll("a");
+        sublinks.forEach(link => {
+            link.addEventListener("click", function (e) {
+                e.preventDefault(); // stop immediate navigation
+                content.style.display = "none"; // collapse dropdown
+                btn.classList.remove("active-parent"); // remove highlight
+
+                // Navigate after a tiny delay
+                const href = this.getAttribute("href");
+                setTimeout(() => {
+                    window.location.href = href;
+                }, 100); // 100ms delay
+            });
+        });
+    });
+});
+</script>
+

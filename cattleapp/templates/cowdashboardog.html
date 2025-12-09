@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<h3 class="fw-bold mb-4">Welcome to Cow Management System Dashboard</h3>
+
+<!-- KPI Cards -->
+<div class="row g-4">
+
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Total Cows</h6>
+                    <h3 class="fw-bold">120</h3>
+                </div>
+                <i class="fa fa-cow kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Daily Milk (L)</h6>
+                    <h3 class="fw-bold">340</h3>
+                </div>
+                <i class="fa fa-glass-water kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Monthly Milk</h6>
+                    <h3 class="fw-bold">10,200</h3>
+                </div>
+                <i class="fa fa-chart-line kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="kpi-card bg-warning text-dark">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Low-Yield Alerts</h6>
+                    <h3 class="fw-bold">5</h3>
+                </div>
+                <i class="fa fa-exclamation-triangle kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<br>
+
+<div class="row g-4">
+
+    <div class="col-md-3">
+        <div class="kpi-card bg-danger text-white">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Vaccinations Due</h6>
+                    <h3 class="fw-bold">12</h3>
+                </div>
+                <i class="fa fa-syringe kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="kpi-card bg-danger text-white">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Health Alerts</h6>
+                    <h3 class="fw-bold">3</h3>
+                </div>
+                <i class="fa fa-heartbeat kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="kpi-card">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Feed Inventory (%)</h6>
+                    <h3 class="fw-bold">65%</h3>
+                </div>
+                <i class="fa fa-leaf kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="kpi-card bg-info text-dark">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Expenses (Monthly)</h6>
+                    <h3 class="fw-bold">$2,300</h3>
+                </div>
+                <i class="fa fa-wallet kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<br>
+
+<div class="row g-4">
+    <div class="col-md-3">
+        <div class="kpi-card bg-success text-white">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Income (Monthly)</h6>
+                    <h3 class="fw-bold">$4,800</h3>
+                </div>
+                <i class="fa fa-coins kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="kpi-card bg-primary text-white">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h6>Profit / Loss</h6>
+                    <h3 class="fw-bold">$2,500</h3>
+                </div>
+                <i class="fa fa-chart-pie kpi-icon"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<br>
+
+<!-- Milk Chart -->
+<div class="card p-4 shadow-sm">
+    <h5 class="fw-bold">Milk Production Trend (Last 30 Days)</h5>
+    <canvas id="milkChart" height="100"></canvas>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+var ctx = document.getElementById('milkChart');
+new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: ['1','5','10','15','20','25','30'],
+        datasets: [{
+            label: 'Milk Production (L)',
+            data: [300,320,310,330,350,340,360],
+            borderColor: '#1abc9c',
+            backgroundColor: 'rgba(26, 188, 156, 0.2)',
+            tension: 0.4,
+            borderWidth: 3
+        }]
+    },
+});
+</script>
+{% endblock %}

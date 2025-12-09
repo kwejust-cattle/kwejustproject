@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Milk Buyers{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Milk Buyer Management</h3>
+
+<!-- Add Milk Buyer Button -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#buyerModal" onclick="resetBuyerForm();">
+    Add Milk Buyer
+</button>
+
+<!-- Milk Buyer Modal -->
+<div class="modal fade" id="buyerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add / Edit Milk Buyer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="buyerForm" method="POST">
+                    {% csrf_token %}
+
+                    <div class="card mb-3">
+                        <div class="card-header">Buyer Information</div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label>Name</label>
+                                    <input type="text" name="name" class="form-control" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label>Phone</label>
+                                    <input type="text" name="contact" class="form-control" required>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label>Address</label>
+                                    <input type="text" name="location" class="form-control" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="buyerSubmitBtn" class="btn btn-primary w-100">
+                        Save Record
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Milk Buyer List -->
+<div class="card">
+    <div class="card-header bg-success text-white">Milk Buyer Records</div>
+    <div class="card-body">
+        <table id="buyerTable" class="table table-bordered table-striped" style="width:100%">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'cow/css/dataTables.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'cow/css/buttons.bootstrap5.min.css' %}">
+<style>
+.dataTables_wrapper .dt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.dt-buttons .btn-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+<script>
+$(document).ready(function () {
+    const csrftoken = document.cookie.split("; ")
+        .find(r => r.startsWith("csrftoken=")).split("=")[1];
+
+    // Initialize DataTable
+    let buyerTable = $('#buyerTable').DataTable({
+        responsive: true,
+        pageLength: 5,
+        dom: "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+             "<'row'<'col-sm-12'tr>>" +
+             "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+        buttons: [
+            { extend: 'copy', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'excel', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'pdf', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'print', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } }
+        ],
+        columns: [
+            { data: null },
+            { data: "name" },
+            { data: "phone" },
+            { data: "address" },
+            {
+                data: null,
+                defaultContent: `
+                    <button class="btn btn-sm btn-primary edit-buyer">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-buyer">Delete</button>
+                `
+            }
+        ],
+        rowCallback: function (row, data, index) {
+            let info = buyerTable.page.info();
+            $('td:eq(0)', row).html(info.start + index + 1);
+        }
+    });
+
+    // Load buyers
+    function loadBuyers() {
+        $.get("{% url 'fetch_milk_buyers' %}", function (data) {
+            buyerTable.clear().rows.add(data).draw();
+        });
+    }
+    loadBuyers();
+
+    // Reset form
+    window.resetBuyerForm = function () {
+        $("#buyerForm")[0].reset();
+        $("#buyerSubmitBtn").text("Save Record").removeClass("btn-success").addClass("btn-primary");
+        $("#buyerForm").off("submit").on("submit", addBuyer);
+    }
+
+    // Add buyer
+    function addBuyer(e) {
+        e.preventDefault();
+        $.ajax({
+            url: "{% url 'add_milk_buyer_ajax' %}",
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            data: {
+                name: $("[name='name']").val(),
+                contact: $("[name='contact']").val(),
+                location: $("[name='location']").val()
+            },
+            success: function(resp) {
+                $("#buyerModal").modal("hide");
+                loadBuyers();
+                Swal.fire("Success", resp.message, "success");
+                resetBuyerForm();
+            },
+            error: function(xhr) {
+                Swal.fire("Error", xhr.responseJSON?.message || "Something went wrong", "error");
+            }
+        });
+    }
+
+    // Edit buyer
+    $("#buyerTable tbody").on("click", ".edit-buyer", function () {
+        let record = buyerTable.row($(this).parents("tr")).data();
+        let id = record.id;
+
+        $.get(`/milk/buyers/get/${id}/`, function (data) {
+            $("[name='name']").val(data.name);
+            $("[name='contact']").val(data.phone);
+            $("[name='location']").val(data.address);
+
+            $("#buyerModal").modal("show");
+
+            $("#buyerSubmitBtn").text("Update Record").removeClass("btn-primary").addClass("btn-success");
+
+            $("#buyerForm").off("submit").on("submit", function (e) {
+                e.preventDefault();
+                $.ajax({
+                    url: `/milk/buyers/update/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    data: {
+                        name: $("[name='name']").val(),
+                        contact: $("[name='contact']").val(),
+                        location: $("[name='location']").val()
+                    },
+                    success: function(resp) {
+                        $("#buyerModal").modal("hide");
+                        loadBuyers();
+                        Swal.fire("Updated!", resp.message, "success");
+                        resetBuyerForm();
+                    }
+                });
+            });
+        });
+    });
+
+    // Delete buyer
+    $("#buyerTable tbody").on("click", ".delete-buyer", function () {
+        let record = buyerTable.row($(this).parents("tr")).data();
+        let id = record.id;
+
+        Swal.fire({
+            title: `Delete buyer ${record.name}?`,
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete",
+            confirmButtonColor: "#d33"
+        }).then(result => {
+            if (result.isConfirmed) {
+                $.post(`/milk/buyers/delete/${id}/`, { csrfmiddlewaretoken: csrftoken }, function(resp) {
+                    loadBuyers();
+                    Swal.fire("Deleted", resp.message, "success");
+                });
+            }
+        });
+    });
+
+});
+</script>
+{% endblock %}

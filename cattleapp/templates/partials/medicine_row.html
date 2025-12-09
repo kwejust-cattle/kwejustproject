@@ -1,0 +1,20 @@
+<tr id="row-{{ med.id }}">
+    <td>{{ med.id }}</td>
+    <td>{{ med.name }}</td>
+    <td>{{ med.price }}</td>
+
+    <td>
+        <button class="btn btn-warning btn-sm edit-btn"
+            data-id="{{ med.id }}"
+            data-name="{{ med.name }}"
+            data-price="{{ med.price }}"
+            data-bs-toggle="modal" data-bs-target="#editMedicineModal">
+            Edit
+        </button>
+
+        <button class="btn btn-danger btn-sm delete-btn"
+            data-id="{{ med.id }}">
+            Delete
+        </button>
+    </td>
+</tr>

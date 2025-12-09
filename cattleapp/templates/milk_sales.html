@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Milk Sales{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Milk Sales Management</h3>
+
+<!-- Add Milk Sale Button -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#saleModal" onclick="resetSaleForm();">
+    Add Milk Sale
+</button>
+
+<!-- Milk Sale Modal -->
+<div class="modal fade" id="saleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Add / Edit Milk Sale</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="saleForm" method="POST" action="{% url 'add_milk_sale_ajax' %}">
+                    {% csrf_token %}
+
+                    <div class="card mb-3">
+                        <div class="card-header">Milk Sale Information</div>
+                        <div class="card-body">
+
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Buyer</label>
+                                    <select name="buyer" class="form-control" required>
+                                        <option value="" disabled selected>Select Buyer</option>
+                                        {% for buyer in buyers %}
+                                        <option value="{{ buyer.id }}">{{ buyer.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Date</label>
+                                    <input type="date" name="date" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Quantity (Liters)</label>
+                                    <input type="number" step="0.01" name="quantity_ltr" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Price per Liter</label>
+                                    <input type="number" step="0.01" name="price_per_ltr" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label>Recorded By</label>
+                                    <select name="recorded_by" class="form-control" required>
+                                        <option value="" disabled selected>Select Staff</option>
+                                        {% for staff_member in staff %}
+                                        <option value="{{ staff_member.id }}">{{ staff_member.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <button type="submit" id="saleSubmitBtn" class="btn btn-primary w-100">
+                        Save Record
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Milk Sale List -->
+<div class="card">
+    <div class="card-header bg-success text-white">Milk Sale Records</div>
+    <div class="card-body">
+        <table id="saleTable" class="table table-bordered table-striped" style="width:100%">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Buyer</th>
+                    <th>Date</th>
+                    <th>Quantity (L)</th>
+                    <th>Price per Liter</th>
+                    <th>Recorded By</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'cow/css/dataTables.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'cow/css/buttons.bootstrap5.min.css' %}">
+
+<style>
+.dataTables_wrapper .dt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.dt-buttons .btn-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+
+<!-- DataTables -->
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+
+<!-- Buttons -->
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+<script>
+$(document).ready(function () {
+
+    const csrftoken = document.cookie.split("; ")
+        .find(r => r.startsWith("csrftoken=")).split("=")[1];
+
+    // DATATABLE INITIALIZATION
+    let saleTable = $('#saleTable').DataTable({
+        responsive: true,
+        pageLength: 5,
+
+        dom:
+            "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+
+        buttons: [
+            { extend: 'copy', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'excel', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'pdf', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'print', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } }
+        ],
+
+        columns: [
+            { data: null },
+            { data: "buyer__name" },
+            { data: "date" },
+            { data: "quantity_ltr" },
+            { data: "price_per_ltr" },
+            { data: "recorded_by__name" },
+            {
+                data: null,
+                defaultContent: `
+                    <button class="btn btn-sm btn-primary edit-sale">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-sale">Delete</button>
+                `
+            }
+        ],
+
+        rowCallback: function (row, data, index) {
+            let info = saleTable.page.info();
+            $('td:eq(0)', row).html(info.start + index + 1);
+        }
+    });
+
+    // LOAD SALE DATA
+    function loadSales() {
+        $.get("{% url 'fetch_milk_sales' %}", function (data) {
+            saleTable.clear().rows.add(data).draw();
+        });
+    }
+    loadSales();
+
+    // RESET FORM
+    window.resetSaleForm = function () {
+        $("#saleForm")[0].reset();
+        $("#saleSubmitBtn").text("Save Record")
+            .removeClass("btn-success")
+            .addClass("btn-primary");
+        $("#saleForm").off("submit").on("submit", addSale);
+    }
+
+    // ADD SALE
+    function addSale(e) {
+        e.preventDefault();
+        $.ajax({
+            url: "{% url 'add_milk_sale_ajax' %}",
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            data: $("#saleForm").serialize(),
+            success: function (resp) {
+                $("#saleModal").modal("hide");
+                loadSales();
+                Swal.fire("Success", resp.message, "success");
+                resetSaleForm();
+            }
+        });
+    }
+
+    // EDIT SALE
+    $("#saleTable tbody").on("click", ".edit-sale", function () {
+        let record = saleTable.row($(this).parents("tr")).data();
+        let id = record.id;
+
+        $.get(`/milk/sales/get/${id}/`, function (data) {
+            $("[name='buyer']").val(data.buyer);
+            $("[name='date']").val(data.date);
+            $("[name='quantity_ltr']").val(data.quantity_ltr);
+            $("[name='price_per_ltr']").val(data.price_per_ltr);
+            $("[name='recorded_by']").val(data.recorded_by);
+
+            $("#saleModal").modal("show");
+
+            $("#saleSubmitBtn")
+                .text("Update Record")
+                .removeClass("btn-primary")
+                .addClass("btn-success");
+
+            $("#saleForm").off("submit").on("submit", function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: `/milk/sales/update/${id}/`,
+                    method: "POST",
+                    headers: { "X-CSRFToken": csrftoken },
+                    data: $(this).serialize(),
+                    success: function (resp) {
+                        $("#saleModal").modal("hide");
+                        loadSales();
+                        Swal.fire("Updated!", resp.message, "success");
+                        resetSaleForm();
+                    }
+                });
+            });
+        });
+    });
+
+    // DELETE SALE
+    $("#saleTable tbody").on("click", ".delete-sale", function () {
+        let record = saleTable.row($(this).parents("tr")).data();
+        let id = record.id;
+
+        Swal.fire({
+            title: `Delete milk sale for ${record.buyer__name}?`,
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete",
+            confirmButtonColor: "#d33"
+        }).then(result => {
+
+            if (result.isConfirmed) {
+                $.post(`/milk/sales/delete/${id}/`,
+                    { csrfmiddlewaretoken: csrftoken },
+                    function (resp) {
+                        loadSales();
+                        Swal.fire("Deleted", resp.message, "success");
+                    }
+                );
+            }
+        });
+    });
+
+});
+</script>
+{% endblock %}

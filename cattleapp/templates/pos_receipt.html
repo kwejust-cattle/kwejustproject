@@ -1,0 +1,39 @@
+<html>
+<head>
+<style>
+body { font-family: monospace; font-size: 13px; }
+.center { text-align: center; }
+.line { border-bottom: 1px dashed #000; margin: 5px 0; }
+.right { float: right; }
+</style>
+</head>
+<body>
+
+<div class="center">
+    <strong>{{ request.user.business_name }}</strong>
+    <div>{{ request.user.business_address }}</div>
+    <div>Receipt No: {{ sale.id }}</div>
+    <div>Date: {{ sale.created_at }}</div>
+</div>
+
+<div class="line"></div>
+
+{% for item in items %}
+{{ item.medicine.name }} ({{ item.batch.batch_number }})<br>
+Qty: {{ item.quantity }} × {{ item.unit_price }} 
+<div class="right">{{ item.quantity|floatformat:0|add:item.unit_price }}</div>
+<br>
+{% endfor %}
+
+<div class="line"></div>
+
+Total: <span class="right">{{ sale.total_amount }}</span><br>
+Paid: <span class="right">{{ sale.paid_amount }}</span><br>
+Balance: <span class="right">{{ sale.balance }}</span>
+
+<div class="center line"></div>
+
+<div class="center">Thank you!</div>
+
+</body>
+</html>

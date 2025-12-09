@@ -1,0 +1,179 @@
+{% extends "adminpanel.html" %}
+{% load static %}
+
+{% block content %}
+
+<h3 class="fw-bold mb-4">Sales</h3>
+
+<div class="row g-3">
+
+    <!-- ADD SALE FORM -->
+    <div class="col-lg-4">
+        <div class="card p-3">
+            <h5 class="fw-bold mb-3">Add to Cart</h5>
+
+            <div class="mb-3">
+                <label class="form-label">Medicine</label>
+                <select id="medicineSelect" class="form-select">
+                    <option value="">Select Medicine</option>
+                    {% for med in medicines %}
+                    <option value="{{ med.id }}">{{ med.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Batch</label>
+                <select id="batchSelect" class="form-select">
+                    <option value="">Select Batch</option>
+                </select>
+            </div>
+
+            <div class="row">
+                <div class="col-6 mb-3">
+                    <label class="form-label">Price</label>
+                    <input type="number" id="unitPrice" class="form-control" readonly>
+                </div>
+
+                <div class="col-6 mb-3">
+                    <label class="form-label">Available</label>
+                    <input type="number" id="availableQty" class="form-control" readonly>
+                </div>
+
+                <div class="col-12 mb-3">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" id="saleQty" class="form-control" placeholder="Enter quantity">
+                </div>
+            </div>
+
+            <button id="addToCartBtn" class="btn btn-primary w-100">Add to Cart</button>
+
+        </div>
+    </div>
+
+
+    <!-- CART TABLE -->
+    <div class="col-lg-8">
+        <div class="card p-3">
+            <h5 class="fw-bold mb-3">Cart</h5>
+
+            <div class="table-responsive">
+                <table class="table table-bordered" id="cartTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Medicine</th>
+                            <th>Batch</th>
+                            <th>Qty</th>
+                            <th>Price</th>
+                            <th>Total</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cartBody"></tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="4" class="text-end">Grand Total:</th>
+                            <th id="grandTotal">0</th>
+                            <th></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            <button class="btn btn-success w-100 mt-3" id="checkoutBtn">Checkout</button>
+        </div>
+    </div>
+
+</div>
+
+
+<!-- =========================== CHECKOUT MODAL =========================== -->
+<div class="modal fade" id="checkoutModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Checkout</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="mb-3">
+                    <label class="form-label">Customer Name</label>
+                    <input id="customerName" type="text" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Payment Amount</label>
+                    <input id="paymentAmount" type="number" class="form-control">
+                </div>
+
+                <p class="fw-bold">
+                    Total Payable: <span id="checkoutTotal" class="text-primary"></span>
+                </p>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button id="confirmCheckoutBtn" class="btn btn-primary">Confirm Sale</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+<!-- =========================== RECEIPT PRINT AREA =========================== -->
+<div id="receiptPrintArea" style="display:none;">
+    <div class="thermal-receipt">
+
+        <h4>PHARMACY RECEIPT</h4>
+        <div class="receipt-line"></div>
+
+        <p>Date: <span id="receiptDate"></span></p>
+        <p>Cashier: {{ request.user.first_name }} {{ request.user.last_name }}</p>
+        <p>Customer: <span id="receiptCustomer"></span></p>
+
+        <div class="receipt-line"></div>
+
+        <table class="receipt-table">
+            <tbody id="receiptItems"></tbody>
+        </table>
+
+        <div class="receipt-line"></div>
+
+        <table class="receipt-table">
+            <tr>
+                <td class="bold">Total:</td>
+                <td class="right bold" id="receiptTotal"></td>
+            </tr>
+            <tr>
+                <td>Paid:</td>
+                <td class="right" id="receiptPaid"></td>
+            </tr>
+            <tr>
+                <td>Change:</td>
+                <td class="right" id="receiptChange"></td>
+            </tr>
+        </table>
+
+        <div class="receipt-line"></div>
+        <p class="receipt-footer">Thank you for your purchase!</p>
+
+    </div>
+</div>
+
+{% endblock %}
+
+
+
+{% block scripts %}
+<script src="{% static 'js/sales.js' %}"></script>
+<script>
+    const batchesURL = "{% url 'get_batches' %}";
+    const saveSaleURL = "{% url 'save_sale' %}";
+</script>
+{% endblock %}

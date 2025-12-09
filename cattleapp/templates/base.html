@@ -1,0 +1,126 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cow Management System{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f5f6fa;
+        }
+
+        /* Sidebar */
+        #sidebar {
+            width: 240px;
+            height: 100vh;
+            background: #2c3e50;
+            position: fixed;
+            top: 0;
+            left: 0;
+            padding-top: 60px;
+            transition: 0.3s;
+            z-index: 2000;
+        }
+        #sidebar a {
+            color: #ecf0f1;
+            padding: 12px 20px;
+            display: block;
+        }
+        #sidebar a:hover {
+            background: #1abc9c;
+        }
+
+        /* Topbar */
+        #topbar {
+            height: 60px;
+            background: white;
+            padding: 10px 20px;
+            position: fixed;
+            left: 240px;
+            right: 0;
+            top: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+            z-index: 1000;
+            transition: 0.3s;
+        }
+
+        /* Content */
+        #content {
+            margin-left: 240px;
+            padding: 80px 25px;
+        }
+
+        /* Mobile */
+        @media(max-width: 768px) {
+            #sidebar {
+                left: -240px;
+                position: fixed;
+            }
+            #sidebar.active {
+                left: 0;
+            }
+            #topbar {
+                left: 0 !important;
+            }
+            #content {
+                margin-left: 0 !important;
+            }
+        }
+
+        .toggle-btn {
+            font-size: 25px;
+            cursor: pointer;
+        }
+
+        /* Cards */
+        .kpi-card {
+            border-radius: 10px;
+            padding: 20px;
+            background: white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .kpi-icon {
+            font-size: 35px;
+            opacity: 0.75;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+{% include "_sidebar.html" %}
+
+<!-- Topbar -->
+{% include "_topbar.html" %}
+
+<!-- Main Content -->
+<div id="content">
+    {% block content %}
+    {% endblock %}
+</div>
+
+<!-- jQuery (REQUIRED for AJAX) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function toggleSidebar() {
+    document.getElementById("sidebar").classList.toggle("active");
+}
+</script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

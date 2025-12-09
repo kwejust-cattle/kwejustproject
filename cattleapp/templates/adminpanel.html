@@ -1,0 +1,2384 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Pharmacy Admin Panel - Option B Light</title>
+    <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/icons.css' %}">
+    <link rel="stylesheet" href="{% static 'css/jquery.dataTables.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/buttons.dataTables.min.css' %}">
+    <!--<link rel="stylesheet" href="https://cdn.datatables.net/1.13.5/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">-->
+
+    
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+
+        a.nav-link {
+            color: #212529;
+        }
+
+        a.nav-link:hover {
+            background-color: #e2e6ea;
+            border-radius: 5px;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            height: 100vh;
+            width: 220px;
+            position: fixed;
+            left: 0;
+            top: 0;
+            background: #ffffff;
+            padding-top: 20px;
+            border-right: 1px solid #dee2e6;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+
+        #sidebar .nav-link i {
+            margin-right: 10px;
+        }
+
+        #sidebar.collapsed {
+            width: 70px;
+        }
+
+        #sidebar.collapsed .nav-link span {
+            display: none;
+        }
+
+        /* Active link styling */
+        a.nav-link.active {
+            background-color: #007bff;
+            color: #ffffff !important;
+            border-radius: 5px;
+        }
+
+        /* Topbar */
+        #topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background-color: #ffffff;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 1000;
+        }
+
+        #topbar .left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        #topbar .right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #topbar .notification {
+            position: relative;
+            cursor: pointer;
+            color: #212529;
+        }
+
+        #topbar .notification .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: red;
+            color: white;
+            font-size: 10px;
+            border-radius: 50%;
+            padding: 2px 5px;
+        }
+
+        /* Main Content */
+        #main-content {
+            margin-left: 220px;
+            padding: 80px 20px 20px 20px;
+            transition: all 0.3s;
+            min-height: 100vh;
+        }
+
+        #sidebar.collapsed+#main-content {
+            margin-left: 70px;
+        }
+
+        /* Notification Dropdown */
+        .notification-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            width: 300px;
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            display: none;
+            z-index: 1001;
+            color: #212529;
+        }
+
+        .notification-dropdown.active {
+            display: block;
+        }
+
+        .notification-item {
+            padding: 10px;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Profile Dropdown */
+        .profile-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            width: 150px;
+            background: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            display: none;
+            z-index: 1001;
+            color: #212529;
+        }
+
+        .profile-dropdown.active {
+            display: block;
+        }
+
+        .profile-dropdown a {
+            display: block;
+            padding: 10px;
+            color: #212529;
+            text-decoration: none;
+        }
+
+        .profile-dropdown a:hover {
+            background-color: #e2e6ea;
+        }
+
+/*INDIVIDUAL PAGES:-*/
+  /*Medicine.html*/
+          #btnAdd{
+            margin-bottom: 50px;
+          }
+/* Make the thead sticky */
+#medicineTable thead th {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 1;
+}
+
+
+/*Medicine.html*/
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+    </style>
+</head>
+
+<body>
+    <!-- Sidebar -->
+<div id="sidebar">
+    <ul class="nav flex-column mt-4">
+
+        <!-- Dashboard (everyone sees) -->
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name == 'maindashboard' %}active{% endif %}"
+                href="{% url 'maindashboard' %}">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+
+
+        <!-- ============================= -->
+        <!-- ADMIN ONLY: MEDICATION DETAILS -->
+        <!-- ============================= -->
+        {% if request.user.title == "admin" %}
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name in 'medicine_form medicine_gene medicinename' %}active{% endif %}"
+                data-bs-toggle="collapse" href="#medicinesMenu" role="button">
+                <i class="bi bi-capsule-pill"></i>
+                <span>Medication Details</span>
+            </a>
+            <div class="collapse ms-4" id="medicinesMenu">
+                <a class="nav-link" href="{% url 'medicine_form' %}">
+                    <i class="bi bi-list-ul"></i> <span>Presentation</span>
+                </a>
+                <a class="nav-link" href="{% url 'medicine_gene' %}">
+                    <i class="bi bi-list-ul"></i> <span>Generic Name</span>
+                </a>
+                <a class="nav-link" href="{% url 'medicinename' %}">
+                    <i class="bi bi-list-ul"></i> <span>Medicine Name</span>
+                </a>
+            </div>
+        </li>
+        {% endif %}
+
+
+        <!-- ========================================== -->
+        <!-- ADMIN ONLY: CUSTOMERS + SUPPLIERS SECTION -->
+        <!-- ========================================== -->
+        {% if request.user.title == "admin" %}
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name in 'customers_list suppliers_list' %}active{% endif %}"
+                data-bs-toggle="collapse" href="#usersMenu" role="button">
+                <i class="bi bi-people"></i>
+                <span>Users</span>
+            </a> 
+            <div class="collapse ms-4" id="usersMenu">
+                <a class="nav-link" href="{% url 'customers_list' %}">
+                    <i class="bi bi-person-lines-fill"></i> <span>Add Customers</span>
+                </a>
+                <a class="nav-link" href="{% url 'suppliers_list' %}">
+                    <i class="bi bi-person-lines-fill"></i> <span>Add Suppliers</span>
+                </a>
+            </div>
+        </li>
+        {% endif %}
+
+
+        <!-- ======================================= -->
+        <!-- MEDICINE SECTION (Admins: all | Saler: only sell) -->
+        <!-- ======================================= -->
+        <li class="nav-item">
+            <a class="nav-link {% if request.resolver_match.url_name in 'add_stock sell_medicine remaining_stock' %}active{% endif %}"
+                data-bs-toggle="collapse" href="#inventorymenu" role="button">
+                <i class="bi bi-people"></i>
+                <span>Medicine</span>
+            </a> 
+
+            <div class="collapse ms-4" id="inventorymenu">
+
+                <!-- ADMIN ONLY: ADD STOCK -->
+                {% if request.user.title == "admin" %}
+                <a class="nav-link" href="{% url 'add_stock' %}">
+                    <span>➕ Add Stock</span>
+                </a>
+                {% endif %}
+
+                <!-- ALL USERS: Sell Medicine -->
+                <a class="nav-link" href="{% url 'sell_medicine' %}">
+                    <span>💊 Sell Medicine</span>
+                </a>
+
+                <!-- ALL USERS: Remaining stock -->
+                <a class="nav-link" href="{% url 'remaining_stock' %}">
+                    <span>📦 Remaining Stock</span>
+                </a>
+
+                <!-- ADMIN ONLY: Profit report -->
+                {% if request.user.title == "admin" %}
+                <a class="nav-link" href="{% url 'remaining_stock' %}">
+                    <span> 💰 Profit Report </span>
+                </a>
+                {% endif %}
+
+            </div>
+        </li>
+
+    </ul>
+</div>
+
+
+    <!-- Topbar -->
+    <div id="topbar">
+        <div class="left">
+            <button id="toggle-btn" class="btn btn-light btn-sm border"><i class="bi bi-list"></i></button>
+            <span>Welcome, {{ request.user.first_name|default:request.user.username }}</span>
+        </div>
+        <div class="right">
+            <div class="notification" id="notification-btn">
+                <i class="bi bi-bell"></i>
+                <span class="badge">3</span>
+                <div class="notification-dropdown" id="notification-dropdown">
+                    <div class="notification-item">New medicine added.</div>
+                    <div class="notification-item">User John registered.</div>
+                    <div class="notification-item">Stock is low for Aspirin.</div>
+                </div>
+            </div>
+            <div class="profile" id="profile-btn">
+                <i class="bi bi-person-circle fs-4"></i>
+                <div class="profile-dropdown" id="profile-dropdown">
+                    <a href="#">Profile</a>
+                    <a href="{% url 'logout' %}">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <!-- jQuery MUST load first 
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>-->
+<script src="{% static 'js/jquery-3.7.1.min.js' %}"></script>
+
+<!-- Then DataTables 
+<script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>-->
+<script src="{% static 'js/jquery.dataTables.min.js' %}"></script>
+
+<!-- Then Popper + Bootstrap -->
+<script src="{% static 'js/popper.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>
+
+<!-- Then Popper + Bootstrap -->
+<!--<script src="{% static 'js/popper.min.js' %}"></script>
+<script src="{% static 'js/bootstrap.min.js' %}"></script>-->
+
+<script src="{% static 'js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'js/buttons.print.min.js' %}"></script>
+<!--<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>-->
+
+<!-- JSZip for Excel export
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>-->
+<script src="{% static 'js/jszip.min.js' %}"></script>
+
+
+<!-- PDFMake for PDF export
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>-->
+<script src="{% static 'js/pdfmake.min.js' %}"></script>
+<script src="{% static 'js/vfs_fonts.js' %}"></script>
+
+    <script>
+        const sidebar = document.getElementById("sidebar");
+        const toggleBtn = document.getElementById("toggle-btn");
+
+        toggleBtn.addEventListener("click", () => {
+            sidebar.classList.toggle("collapsed");
+        });
+
+        // Notification dropdown toggle
+        const notificationBtn = document.getElementById("notification-btn");
+        const notificationDropdown = document.getElementById("notification-dropdown");
+
+        notificationBtn.addEventListener("click", () => {
+            notificationDropdown.classList.toggle("active");
+        });
+
+        // Profile dropdown toggle
+        const profileBtn = document.getElementById("profile-btn");
+        const profileDropdown = document.getElementById("profile-dropdown");
+
+        profileBtn.addEventListener("click", () => {
+            profileDropdown.classList.toggle("active");
+        });
+
+        // Collapse submenu after clicking a sublink
+        document.querySelectorAll('#sidebar .collapse .nav-link').forEach(function (link) {
+            link.addEventListener('click', function () {
+                const collapseDiv = this.closest('.collapse');
+                if (collapseDiv) {
+                    bootstrap.Collapse.getInstance(collapseDiv)?.hide();
+                }
+            });
+        });
+
+
+        // Close dropdowns on outside click
+        document.addEventListener('click', function (event) {
+            if (!notificationBtn.contains(event.target)) {
+                notificationDropdown.classList.remove('active');
+            }
+            if (!profileBtn.contains(event.target)) {
+                profileDropdown.classList.remove('active');
+            }
+        });
+    </script>
+
+    <script>
+        setTimeout(() => {
+            const alert = document.querySelector('#alert1');
+            if (alert) {
+                alert.classList.remove('show');
+                alert.classList.add('fade');
+                setTimeout(() => alert.remove(), 1000);
+            }
+        }, 5000);
+    </script>
+
+<!-- SWEET ALERT CDN
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>-->
+<script src="{% static 'js/sweetalert2@11' %}"></script>
+
+
+<!-- Form -->
+<script>
+$(document).ready(function () {
+
+    const csrftoken = "{{ csrf_token }}";
+
+    // Initialize DataTable
+    var table = $("#formTable").DataTable({
+    processing: true,
+    serverSide: true,
+    pageLength: 10,   // default shown rows
+    lengthMenu: [
+        [5, 10, 15, 20, 25, 50, 100, -1],
+        [5, 10, 15, 20, 25, 50, 100, "All"]
+    ],
+    dom: 'lBfrtip',   // <-- ADDED FOR BUTTONS
+    buttons: [
+        {
+            extend: 'excelHtml5',
+            text: 'Export Excel',
+            className: 'btn btn-success',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'pdfHtml5',
+            text: 'Export PDF',
+            className: 'btn btn-danger',
+            orientation: 'portrait',
+            pageSize: 'A4',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'print',
+            text: 'Print Labels',
+            className: 'btn btn-primary',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            },
+            customize: function (win) {
+                // PRINT-FRIENDLY LABEL FORMAT
+                $(win.document.body).css('font-size', '14px');
+                $(win.document.body).prepend('<h3 class="text-center">Medicine Labels</h3>');
+            }
+        }
+    ],
+    scrollY: "400px",       // <-- makes the table body scrollable
+    scrollCollapse: true,   // <-- allows table to shrink if fewer rows
+    paging: true,
+    ajax: {
+        url: "{% url 'medicineform_data' %}",
+    type: "GET"
+    },
+
+    columns: [
+        {
+            data: null,
+            render: function (data, type, row, meta) {
+                return meta.row + meta.settings._iDisplayStart + 1;
+            }
+        },
+        { data: "name" },
+        {
+            data: "id",
+            render: function (id, type, row) {
+                return `
+                    <button class="btn btn-warning btn-sm edit-btn"
+                            data-id="${id}"
+                            data-name="${row.name}">
+                        Edit
+                    </button>
+
+                    <button class="btn btn-danger btn-sm delete-btn"
+                            data-id="${id}">
+                        Delete
+                    </button>
+                `;
+            }
+        }
+    ]
+});
+
+
+    // ADD MEDICINE FORM
+    $("#addMedicineForms").submit(function (e) {
+        e.preventDefault();
+        
+        const name = $("#name").val().trim();
+
+    // Ensure name contains at least one letter
+       if (!/[a-zA-Z]/.test(name)) {
+            Swal.fire("Error", "Form name must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+
+    // If validations pass, send AJAX
+        $.ajax({
+            url: "{% url 'medicineform_add' %}",
+            method: "POST",
+            data: {
+                name: $("#name").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                if (response.status === "success") {
+                    Swal.fire("Added!", response.message, "success");
+                    $("#addModalforms").modal("hide");
+                    $("#addMedicineForms")[0].reset();
+                    table.ajax.reload();
+                } else {
+                    Swal.fire("Error", response.message, "error");
+                }
+            }
+        });
+    });
+
+
+    // OPEN EDIT MODAL
+    $("#formTable").on("click", ".edit-btn", function () {
+        $("#edit_id").val($(this).data("id"));
+        $("#edit_name").val($(this).data("name"));
+        $("#editModalforms").modal("show");
+    });
+
+    // UPDATE MEDICINE
+    $("#editMedicineForms").submit(function (e) {
+        e.preventDefault();
+        
+        const name = $("#edit_name").val().trim();
+
+        if (!/[a-zA-Z]/.test(name)) {
+            Swal.fire("Error", "Form name must contain at least one letter!", "error");
+            return;
+        }
+
+        $.ajax({
+            url: "/medicineform/update/" + $("#edit_id").val() + "/",
+            method: "POST",
+            data: {
+                name: $("#edit_name").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                Swal.fire("Updated!", response.message, "success");
+
+                $("#editModalforms").modal("hide");
+                table.ajax.reload();
+            }
+        });
+    });
+
+    // DELETE MEDICINE Form
+    $("#formTable").on("click", ".delete-btn", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "Are you sure?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete"
+        }).then((res) => {
+            if (res.isConfirmed) {
+                $.ajax({
+                    url: "/medicineform/delete/" + id + "/",
+                    method: "POST",
+                    data: {
+                        csrfmiddlewaretoken: csrftoken
+                    },
+                    success: function () {
+                        Swal.fire("Deleted!", "Form removed", "success");
+                        table.ajax.reload();
+                    }
+                });
+            }
+        });
+    });
+
+});
+</script>
+<!-- Form -->
+
+
+<!-- Generic -->
+<script>
+$(document).ready(function () {
+
+    const csrftoken = "{{ csrf_token }}";
+
+    // Initialize DataTable
+    var table = $("#geneTable").DataTable({
+    processing: true,
+    serverSide: true,
+    pageLength: 10,   // default shown rows
+    lengthMenu: [
+        [5, 10, 15, 20, 25, 50, 100, -1],
+        [5, 10, 15, 20, 25, 50, 100, "All"]
+    ],
+    dom: 'lBfrtip',   // <-- ADDED FOR BUTTONS
+    buttons: [
+        {
+            extend: 'excelHtml5',
+            text: 'Export Excel',
+            className: 'btn btn-success',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'pdfHtml5',
+            text: 'Export PDF',
+            className: 'btn btn-danger',
+            orientation: 'portrait',
+            pageSize: 'A4',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'print',
+            text: 'Print Labels',
+            className: 'btn btn-primary',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            },
+            customize: function (win) {
+                // PRINT-FRIENDLY LABEL FORMAT
+                $(win.document.body).css('font-size', '14px');
+                $(win.document.body).prepend('<h3 class="text-center">Medicine Labels</h3>');
+            }
+        }
+    ],
+    scrollY: "400px",       // <-- makes the table body scrollable
+    scrollCollapse: true,   // <-- allows table to shrink if fewer rows
+    paging: true,
+    ajax: {
+        url: "{% url 'medicinegene_data' %}",
+    type: "GET"
+    },
+
+    columns: [
+        {
+            data: null,
+            render: function (data, type, row, meta) {
+                return meta.row + meta.settings._iDisplayStart + 1;
+            }
+        },
+        { data: "name" },
+        {
+            data: "id",
+            render: function (id, type, row) {
+                return `
+                    <button class="btn btn-warning btn-sm edit-btn"
+                            data-id="${id}"
+                            data-name="${row.name}">
+                        Edit
+                    </button>
+
+                    <button class="btn btn-danger btn-sm delete-btn"
+                            data-id="${id}">
+                        Delete
+                    </button>
+                `;
+            }
+        }
+    ]
+});
+
+
+    // ADD MEDICINE GENERIC NAME
+    $("#addMedicineFormg").submit(function (e) {
+        e.preventDefault();
+        
+        const name = $("#name").val().trim();
+
+    // Ensure name contains at least one letter
+       if (!/[a-zA-Z]/.test(name)) {
+            Swal.fire("Error", "Generic name must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+
+    // If validations pass, send AJAX
+        $.ajax({
+            url: "{% url 'medicinegene_add' %}",
+            method: "POST",
+            data: {
+                name: $("#name").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                if (response.status === "success") {
+                    Swal.fire("Added!", response.message, "success");
+                    $("#addModalg").modal("hide");
+                    $("#addMedicineFormg")[0].reset();
+                    table.ajax.reload();
+                } else {
+                    Swal.fire("Error", response.message, "error");
+                }
+            }
+        });
+    });
+
+
+    // OPEN EDIT MODAL
+    $("#geneTable").on("click", ".edit-btn", function () {
+        $("#edit_id").val($(this).data("id"));
+        $("#edit_name").val($(this).data("name"));
+        $("#editModalg").modal("show");
+    });
+
+    // UPDATE MEDICINE
+    $("#editMedicineFormg").submit(function (e) {
+        e.preventDefault();
+        
+        const name = $("#edit_name").val().trim();
+
+        if (!/[a-zA-Z]/.test(name)) {
+            Swal.fire("Error", "Generic name must contain at least one letter!", "error");
+            return;
+        }
+
+        $.ajax({
+            url: "/medicinegene/update/" + $("#edit_id").val() + "/",
+            method: "POST",
+            data: {
+                name: $("#edit_name").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                Swal.fire("Updated!", response.message, "success");
+
+                $("#editModalg").modal("hide");
+                table.ajax.reload();
+            }
+        });
+    });
+
+    // DELETE MEDICINE Form
+    $("#geneTable").on("click", ".delete-btn", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "Are you sure?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete"
+        }).then((res) => {
+            if (res.isConfirmed) {
+                $.ajax({
+                    url: "/medicinegene/delete/" + id + "/",
+                    method: "POST",
+                    data: {
+                        csrfmiddlewaretoken: csrftoken
+                    },
+                    success: function () {
+                        Swal.fire("Deleted!", "Form removed", "success");
+                        table.ajax.reload();
+                    }
+                });
+            }
+        });
+    });
+
+});
+</script>
+<!-- Generic -->
+
+<!--MedName-->
+<script>
+$(document).ready(function () {
+    /* dropown data(generic + form) */
+  function loadDropdowns() {
+    $.ajax({
+        url: "{% url 'medname_dropdown' %}",
+        method: "GET",
+        success: function (data) {
+            // --- Fill GENERIC dropdown ---
+          /*   $("#gene").empty().append('<option value="">-- Select Generic --</option>');
+            $("#edit_gene").empty().append('<option value="">-- Select Generic --</option>');
+
+            data.genes.forEach(function (g) {
+                $("#gene").append(`<option value="${g.name}">${g.name}</option>`);
+                $("#edit_gene").append(`<option value="${g.name}">${g.name}</option>`);
+            });  */
+
+            // --- Fill FORM dropdown ---
+            $("#form").empty().append('<option value="">-- Select Form --</option>');
+            $("#edit_form").empty().append('<option value="">-- Select Form --</option>');
+
+            data.forms.forEach(function (f) {
+                $("#form").append(`<option value="${f.name}">${f.name}</option>`);
+                $("#edit_form").append(`<option value="${f.name}">${f.name}</option>`);
+            });
+        }
+    });
+}
+
+// Load dropdowns when page loads
+loadDropdowns();
+
+// Reload dropdowns again whenever Add Modal opens
+$("#btnAdd").click(function () {
+    loadDropdowns();
+});
+
+/*dropdown data using ajax (generic + form)*/
+
+    const csrftoken = "{{ csrf_token }}";
+
+    // Initialize DataTable
+    var table = $("#mednameTable").DataTable({
+    processing: true,
+    serverSide: true,
+    pageLength: 10,   // default shown rows
+    lengthMenu: [
+        [5, 10, 15, 20, 25, 50, 100, -1],
+        [5, 10, 15, 20, 25, 50, 100, "All"]
+    ],
+    dom: 'lBfrtip',   // <-- ADDED FOR BUTTONS
+    buttons: [
+        {
+            extend: 'excelHtml5',
+            text: 'Export Excel',
+            className: 'btn btn-success',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'pdfHtml5',
+            text: 'Export PDF',
+            className: 'btn btn-danger',
+            orientation: 'portrait',
+            pageSize: 'A4',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'print',
+            text: 'Print Labels',
+            className: 'btn btn-primary',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            },
+            customize: function (win) {
+                // PRINT-FRIENDLY LABEL FORMAT
+                $(win.document.body).css('font-size', '14px');
+                $(win.document.body).prepend('<h3 class="text-center">Medicine Labels</h3>');
+            }
+        }
+    ],
+    scrollY: "400px",       // <-- makes the table body scrollable
+    scrollCollapse: true,   // <-- allows table to shrink if fewer rows
+    paging: true,
+    ajax: {
+        url: "{% url 'medicinename_data' %}",
+    type: "GET"
+    },
+
+    columns: [
+        {
+            data: null,
+            render: function (data, type, row, meta) {
+                return meta.row + meta.settings._iDisplayStart + 1;
+            }
+        },
+        { data: "name" },
+        { data: "category" },
+        { data: "description" },
+        { data: "reorder_level" },
+        //{ data: "created_at" },
+        {
+            data: "created_at",
+            render: function (data, type, row) {
+                if (!data) return "";
+
+                let date = new Date(data);
+                let day = String(date.getDate()).padStart(2, '0');
+                let month = String(date.getMonth() + 1).padStart(2, '0');
+                let year = date.getFullYear();
+
+                return `${day}-${month}-${year}`;
+            }
+        },
+        {
+            data: "id",
+            render: function (id, type, row) {
+                return `
+                    <button class="btn btn-warning btn-sm edit-btn"
+                            data-id="${id}"
+                            data-name="${row.name}"
+                            data-form="${row.category}"
+                            data-description="${row.description}"
+                            data-number="${row.reorder_level}">
+                        Edit
+                    </button>
+
+                    <button class="btn btn-danger btn-sm delete-btn"
+                            data-id="${id}">
+                        Delete
+                    </button>
+                `;
+            }
+        }
+    ]
+});
+
+
+    // ADD MEDICINE
+    $("#addMedicineName").submit(function (e) {
+        e.preventDefault();
+        //name, form, description, number
+        const name = $("#name").val().trim();
+        const form = $("#form").val().trim();
+        const description = $("#description").val().trim();
+        const number = $("#number").val().trim();
+
+    // Ensure name contains at least one letter
+       if (!/[a-zA-Z]/.test(name)) {
+            Swal.fire("Error", "Medicine name must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+    // Validation: price must be a number > 0
+        if (!number || isNaN(number) || Number(number) <= 0) {
+            Swal.fire("Error", "Please enter a valid number!", "error");
+            return;
+        }
+
+    // If validations pass, send AJAX
+        $.ajax({
+            url: "{% url 'medicinename_add' %}",
+            method: "POST",
+            data: {
+                name: $("#name").val(),
+                form: $("#form").val(),
+                description: $("#description").val(),
+                number: $("#number").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                if (response.status === "success") {
+                    Swal.fire("Added!", response.message, "success");
+                    $("#addModaln").modal("hide");
+                    $("#addMedicineName")[0].reset();
+                    table.ajax.reload();
+                } else {
+                    Swal.fire("Error", response.message, "error");
+                }
+            }
+        });
+    });
+
+
+    // OPEN EDIT MODAL
+$("#mednameTable").on("click", ".edit-btn", function () {
+    $("#edit_id").val($(this).data("id"));
+    $("#edit_name").val($(this).data("name"));
+    $("#edit_description").val($(this).data("description"));
+    $("#edit_number").val($(this).data("number"));
+    // Set dropdown values
+    //$("#edit_gene").val($(this).data("gene"));
+    $("#edit_form").val($(this).data("form"));
+    $("#editModaln").modal("show");
+});
+
+    // UPDATE MEDICINE
+    $("#editMedicineName").submit(function (e) {
+        e.preventDefault();
+      
+        const name = $("#edit_name").val().trim();
+        const form = $("#edit_form").val().trim();
+        const description = $("#edit_description").val().trim();
+        const number = $("#edit_number").val().trim();
+
+        if (!/[a-zA-Z]/.test(name)) {
+            Swal.fire("Error", "Medicine name must contain at least one letter!", "error");
+            return;
+        }
+
+        if (!number || isNaN(number) || Number(number) <= 0) {
+            Swal.fire("Error", "Please enter a valid number!", "error");
+            return;
+        }
+        $.ajax({
+            url: "/medicinename/update/" + $("#edit_id").val() + "/",
+            method: "POST",
+            data: {  //name, form, description, number
+                name: $("#edit_name").val(),
+                form: $("#edit_form").val(),
+                description: $("#edit_description").val(),
+                number: $("#edit_number").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                Swal.fire("Updated!", response.message, "success");
+
+                $("#editModaln").modal("hide");
+                table.ajax.reload();
+            }
+        });
+    });
+
+    // DELETE MEDICINE
+    $("#mednameTable").on("click", ".delete-btn", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "Are you sure?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete"
+        }).then((res) => {
+            if (res.isConfirmed) {
+                $.ajax({
+                    url: "/medicinename/delete/" + id + "/",
+                    method: "POST",
+                    data: {
+                        csrfmiddlewaretoken: csrftoken
+                    },
+                    success: function () {
+                        Swal.fire("Deleted!", "Medicine removed", "success");
+                        table.ajax.reload();
+                    }
+                });
+            }
+        });
+    });
+
+});
+</script>
+<!--MedName-->
+
+
+<!--Customers-->
+<script>
+// Set max = today's date
+let today = new Date().toISOString().split("T")[0];
+document.getElementById("date").setAttribute("max", today);
+
+// Set max = today's date
+let edittoday = new Date().toISOString().split("T")[0];
+document.getElementById("edit_date").setAttribute("max", today);
+
+</script>
+<script>
+$(document).ready(function () {
+    const csrftoken = "{{ csrf_token }}";
+
+    // Initialize DataTable
+    var table = $("#customersTable").DataTable({
+    processing: true,
+    serverSide: true,
+    pageLength: 10,   // default shown rows
+    lengthMenu: [
+        [5, 10, 15, 20, 25, 50, 100, -1],
+        [5, 10, 15, 20, 25, 50, 100, "All"]
+    ],
+    dom: 'lBfrtip',   // <-- ADDED FOR BUTTONS
+    buttons: [
+        {
+            extend: 'excelHtml5',
+            text: 'Export Excel',
+            className: 'btn btn-success',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'pdfHtml5',
+            text: 'Export PDF',
+            className: 'btn btn-danger',
+            orientation: 'portrait',
+            pageSize: 'A4',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'print',
+            text: 'Print Labels',
+            className: 'btn btn-primary',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            },
+            customize: function (win) {
+                // PRINT-FRIENDLY LABEL FORMAT
+                $(win.document.body).css('font-size', '14px');
+                $(win.document.body).prepend('<h3 class="text-center">Medicine Labels</h3>');
+            }
+        }
+    ],
+    scrollY: "400px",       // <-- makes the table body scrollable
+    scrollCollapse: true,   // <-- allows table to shrink if fewer rows
+    paging: true,
+    ajax: {
+        url: "{% url 'customers_data' %}",
+    type: "GET"
+    },
+
+    columns: [
+        {
+            data: null,
+            render: function (data, type, row, meta) {
+                return meta.row + meta.settings._iDisplayStart + 1;
+            }
+        },
+        { data: "fname" },
+        { data: "sname" },
+        { data: "location" },
+        { data: "date" },
+        { data: "phone" },
+        {
+            data: "id",
+            render: function (id, type, row) {
+                return `
+                    <button class="btn btn-warning btn-sm edit-btn"
+                            data-id="${id}"
+                            data-fname="${row.fname}"
+                            data-sname="${row.sname}"
+                            data-location="${row.location}"
+                            data-date="${row.date}"
+                            data-phone="${row.phone}">
+                        Edit
+                    </button>
+
+                    <button class="btn btn-danger btn-sm delete-btn"
+                            data-id="${id}">
+                        Delete
+                    </button>
+                `;
+            }
+        }
+    ]
+});
+
+
+    // ADD CUSTOMER
+    $("#addCustomerForm").submit(function (e) {
+        e.preventDefault();
+        
+        const fname = $("#fname").val().trim();
+        const sname = $("#sname").val().trim();
+        const location = $("#location").val().trim();
+        const date = $("#date").val().trim();
+        const phone = $("#phone").val().trim();
+
+    // Ensure fname contains at least one letter
+       if (!/[a-zA-Z]/.test(fname)) {
+            Swal.fire("Error", "First name must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+    // Ensure sname contains at least one letter
+       if (!/[a-zA-Z]/.test(sname)) {
+            Swal.fire("Error", "Surname must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+    
+    // Validation Mobile:         
+        if (!/^\+?[0-9]{10,15}$/.test(phone)) {
+            Swal.fire("Error", "Please enter a valid mobile number!", "error");
+            return;
+        }
+
+    // If validations pass, send AJAX
+        $.ajax({
+            url: "{% url 'customers_add' %}",
+            method: "POST",
+            data: {
+                fname: $("#fname").val(),
+                sname: $("#sname").val(),
+                location: $("#location").val(),
+                date: $("#date").val(),
+                phone: $("#phone").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                if (response.status === "success") {
+                    Swal.fire("Added!", response.message, "success");
+                    $("#addModalc").modal("hide");
+                    $("#addCustomerForm")[0].reset();
+                    table.ajax.reload();
+                } else {
+                    Swal.fire("Error", response.message, "error");
+                }
+            }
+        });
+    });
+
+
+    // OPEN EDIT MODAL
+$("#customersTable").on("click", ".edit-btn", function () {
+    $("#edit_id").val($(this).data("id"));
+    $("#edit_fname").val($(this).data("fname"));
+    $("#edit_sname").val($(this).data("sname"));
+    $("#edit_location").val($(this).data("location"));
+    $("#edit_date").val($(this).data("date"));
+    $("#edit_phone").val($(this).data("phone"));
+    $("#editModalc").modal("show");
+});
+
+    // UPDATE MEDICINE
+    $("#editCustomerForm").submit(function (e) {
+        e.preventDefault();
+        
+        const fname = $("#edit_fname").val().trim();
+        const sname = $("#edit_sname").val().trim();
+        const location = $("#edit_location").val().trim();
+        const date = $("#edit_date").val().trim();
+        const phone = $("#edit_phone").val().trim();
+
+        // Ensure fname contains at least one letter
+       if (!/[a-zA-Z]/.test(fname)) {
+            Swal.fire("Error", "First name must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+    // Ensure sname contains at least one letter
+       if (!/[a-zA-Z]/.test(sname)) {
+            Swal.fire("Error", "Surname must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+    
+    // Validation Mobile:         
+        if (!/^\+?[0-9]{10,15}$/.test(phone)) {
+            Swal.fire("Error", "Please enter a valid mobile number!", "error");
+            return;
+        }
+
+        $.ajax({
+            url: "/customers/update/" + $("#edit_id").val() + "/",
+            method: "POST",
+            data: {
+                fname: $("#edit_fname").val(),
+                sname: $("#edit_sname").val(),
+                location: $("#edit_location").val(),
+                date: $("#edit_date").val(),
+                phone: $("#edit_phone").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                Swal.fire("Updated!", response.message, "success");
+
+                $("#editModalc").modal("hide");
+                table.ajax.reload();
+            }
+        });
+    });
+
+    // DELETE MEDICINE
+    $("#customersTable").on("click", ".delete-btn", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "Are you sure?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete"
+        }).then((res) => {
+            if (res.isConfirmed) {
+                $.ajax({
+                    url: "/customers/delete/" + id + "/",
+                    method: "POST",
+                    data: {
+                        csrfmiddlewaretoken: csrftoken
+                    },
+                    success: function () {
+                        Swal.fire("Deleted!", "Customer removed", "success");
+                        table.ajax.reload();
+                    }
+                });
+            }
+        });
+    });
+
+});
+</script>
+<!--Customers-->
+
+<!--Suppliers-->
+<script>
+// Set max = today's date
+let todays = new Date().toISOString().split("T")[0];
+document.getElementById("sdate").setAttribute("max", today);
+
+// Set max = today's date
+let edittodays = new Date().toISOString().split("T")[0];
+document.getElementById("edit_sdate").setAttribute("max", today);
+
+</script>
+<script>
+$(document).ready(function () {
+    const csrftoken = "{{ csrf_token }}";
+
+    // Initialize DataTable
+    var table = $("#supplierTable").DataTable({
+    processing: true,
+    serverSide: true,
+    pageLength: 10,   // default shown rows
+    lengthMenu: [
+        [5, 10, 15, 20, 25, 50, 100, -1],
+        [5, 10, 15, 20, 25, 50, 100, "All"]
+    ],
+    dom: 'lBfrtip',   // <-- ADDED FOR BUTTONS
+    buttons: [
+        {
+            extend: 'excelHtml5',
+            text: 'Export Excel',
+            className: 'btn btn-success',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'pdfHtml5',
+            text: 'Export PDF',
+            className: 'btn btn-danger',
+            orientation: 'portrait',
+            pageSize: 'A4',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'print',
+            text: 'Print Labels',
+            className: 'btn btn-primary',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            },
+            customize: function (win) {
+                // PRINT-FRIENDLY LABEL FORMAT
+                $(win.document.body).css('font-size', '14px');
+                $(win.document.body).prepend('<h3 class="text-center">Medicine Labels</h3>');
+            }
+        }
+    ],
+    scrollY: "400px",       // <-- makes the table body scrollable
+    scrollCollapse: true,   // <-- allows table to shrink if fewer rows
+    paging: true,
+    ajax: {
+        url: "{% url 'suppliers_data' %}",
+    type: "GET"
+    },
+
+    columns: [
+        {
+            data: null,
+            render: function (data, type, row, meta) {
+                return meta.row + meta.settings._iDisplayStart + 1;
+            }
+        },
+        { data: "name" },
+        { data: "supply" },
+        { data: "location" },
+        { data: "phone" },
+        { data: "date" },
+        {
+            data: "id",
+            render: function (id, type, row) {
+                return `
+                    <button class="btn btn-warning btn-sm edit-btn"
+                            data-id="${id}"
+                            data-name="${row.name}"
+                            data-supply="${row.supply}"
+                            data-location="${row.location}"
+                            data-phone="${row.phone}"
+                            data-date="${row.date}">
+                        Edit
+                    </button>
+
+                    <button class="btn btn-danger btn-sm delete-btn"
+                            data-id="${id}">
+                        Delete
+                    </button>
+                `;
+            }
+        }
+    ]
+});
+
+
+    // ADD SUPPLIER
+    $("#addSupplierForm").submit(function (e) {
+        e.preventDefault();
+        
+        const name = $("#name").val().trim();
+        const supply = $("#supply").val().trim();
+        const location = $("#location").val().trim();
+        const phone = $("#phone").val().trim();
+        const date = $("#sdate").val().trim();
+
+    // Ensure fname contains at least one letter
+       if (!/[a-zA-Z]/.test(name)) {
+            Swal.fire("Error", "First name must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+    // Ensure supply contains at least one letter
+       if (!/[a-zA-Z]/.test(supply)) {
+            Swal.fire("Error", "Supply field must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+
+    // Ensure location contains at least one letter
+       if (!/[a-zA-Z]/.test(location)) {
+            Swal.fire("Error", "location must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+    
+    // Validation Mobile:         
+        if (!/^\+?[0-9]{10,15}$/.test(phone)) {
+            Swal.fire("Error", "Please enter a valid mobile number!", "error");
+            return;
+        }
+
+    // If validations pass, send AJAX
+        $.ajax({
+            url: "{% url 'suppliers_add' %}",
+            method: "POST",
+            data: {
+                name: $("#name").val(),
+                supply: $("#supply").val(),
+                location: $("#location").val(),
+                phone: $("#phone").val(),
+                date: $("#sdate").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                if (response.status === "success") {
+                    Swal.fire("Added!", response.message, "success");
+                    $("#addModals").modal("hide");
+                    $("#addSupplierForm")[0].reset();
+                    table.ajax.reload();
+                } else {
+                    Swal.fire("Error", response.message, "error");
+                }
+            }
+        });
+    });
+
+
+    // OPEN EDIT MODAL
+$("#supplierTable").on("click", ".edit-btn", function () {
+    $("#edit_id").val($(this).data("id"));
+    $("#edit_name").val($(this).data("name"));
+    $("#edit_supply").val($(this).data("supply"));
+    $("#edit_location").val($(this).data("location"));
+    $("#edit_phone").val($(this).data("phone"));
+    $("#edit_sdate").val($(this).data("date"));
+    $("#editModals").modal("show");
+});
+
+    // UPDATE SUPPLIER
+    $("#editSupplierForm").submit(function (e) {
+        e.preventDefault();
+        
+        const name = $("#edit_name").val().trim();
+        const supply = $("#edit_supply").val().trim();
+        const location = $("#edit_location").val().trim();
+        const phone = $("#edit_phone").val().trim();
+        const date = $("#edit_sdate").val().trim();
+
+        // Ensure fname contains at least one letter
+       if (!/[a-zA-Z]/.test(name)) {
+            Swal.fire("Error", "First name must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+    // Ensure supply contains at least one letter
+       if (!/[a-zA-Z]/.test(supply)) {
+            Swal.fire("Error", "Supply field must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+
+    // Ensure location contains at least one letter
+       if (!/[a-zA-Z]/.test(location)) {
+            Swal.fire("Error", "location must contain at least one letter!", "error");
+            return;  // stop submission
+        }
+    
+    // Validation Mobile:         
+        if (!/^\+?[0-9]{10,15}$/.test(phone)) {
+            Swal.fire("Error", "Please enter a valid mobile number!", "error");
+            return;
+        }
+
+    // If validations pass, send AJAX
+        $.ajax({
+            url: "/suppliers/update/" + $("#edit_id").val() + "/",
+            method: "POST",
+            data: {
+                name: $("#edit_name").val(),
+                supply: $("#edit_supply").val(),
+                location: $("#edit_location").val(),
+                phone: $("#edit_phone").val(),
+                date: $("#edit_sdate").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                Swal.fire("Updated!", response.message, "success");
+
+                $("#editModals").modal("hide");
+                table.ajax.reload();
+            }
+        });
+    });
+
+    // DELETE SUPPLIER
+    $("#supplierTable").on("click", ".delete-btn", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "Are you sure?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete"
+        }).then((res) => {
+            if (res.isConfirmed) {
+                $.ajax({
+                    url: "/suppliers/delete/" + id + "/",
+                    method: "POST",
+                    data: {
+                        csrfmiddlewaretoken: csrftoken
+                    },
+                    success: function () {
+                        Swal.fire("Deleted!", "Supplier removed", "success");
+                        table.ajax.reload();
+                    }
+                });
+            }
+        });
+    });
+
+});
+</script>
+<!--Suppliers-->
+
+
+
+<!--BATCH-->
+<script>
+$(document).ready(function () {
+    /* dropown data(medicine name) */
+  function loadDropdowns() {
+    $.ajax({
+        url: "{% url 'batchmedics_dropdown' %}",
+        method: "GET",
+        success: function (data) {
+            // --- Fill FORM dropdown ---
+            $("#medicine").empty().append('<option value="">-- Select Medicine --</option>');
+            $("#edit_medicine").empty().append('<option value="">-- Select Medicine --</option>');
+
+            data.medics.forEach(function (f) {
+                $("#medicine").append(`<option value="${f.id}">${f.name}</option>`);
+                $("#edit_medicine").append(`<option value="${f.id}">${f.name}</option>`);
+            });
+        }
+    });
+}
+
+// Load dropdowns when page loads
+loadDropdowns();
+
+// Reload dropdowns again whenever Add Modal opens
+$("#btnAdd").click(function () {
+    loadDropdowns();
+});
+
+/*dropdown data using ajax (generic + form)*/
+
+    const csrftoken = "{{ csrf_token }}";
+
+    // Initialize DataTable
+    var table = $("#batchTable").DataTable({
+    processing: true,
+    serverSide: true,
+    pageLength: 10,   // default shown rows
+    lengthMenu: [
+        [5, 10, 15, 20, 25, 50, 100, -1],
+        [5, 10, 15, 20, 25, 50, 100, "All"]
+    ],
+    dom: 'lBfrtip',   // <-- ADDED FOR BUTTONS
+    buttons: [
+        {
+            extend: 'excelHtml5',
+            text: 'Export Excel',
+            className: 'btn btn-success',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'pdfHtml5',
+            text: 'Export PDF',
+            className: 'btn btn-danger',
+            orientation: 'portrait',
+            pageSize: 'A4',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            }
+        },
+        {
+            extend: 'print',
+            text: 'Print Labels',
+            className: 'btn btn-primary',
+            exportOptions: {
+                 columns: ':not(:last-child)'
+            },
+            customize: function (win) {
+                // PRINT-FRIENDLY LABEL FORMAT
+                $(win.document.body).css('font-size', '14px');
+                $(win.document.body).prepend('<h3 class="text-center">Medicine Labels</h3>');
+            }
+        }
+    ],
+    scrollY: "400px",       // <-- makes the table body scrollable
+    scrollCollapse: true,   // <-- allows table to shrink if fewer rows
+    paging: true,
+    ajax: {
+        url: "{% url 'batchmedics_data' %}",
+    type: "GET"
+    },
+
+    columns: [
+            {
+                data: null,
+                render: function (data, type, row, meta) {
+                    return meta.row + meta.settings._iDisplayStart + 1;
+                }
+            },
+            { data: "batch_number" },
+            { data: "medicine_name" },
+            { data: "quantity" },
+            { data: "cost_price" },
+            { data: "selling_price" },
+            /*{ data: "date_added" },*/
+            {
+                data: "date_added",
+                render: function (data, type, row) {
+                    if (!data) return "";
+
+                    let date = new Date(data);
+                    let day = String(date.getDate()).padStart(2, '0');
+                    let month = String(date.getMonth() + 1).padStart(2, '0');
+                    let year = date.getFullYear();
+
+                    return `${day}-${month}-${year}`;
+                }
+            },
+            /* { data: "expiry_date" },*/
+            {
+                data: "expiry_date",
+                render: function (data) {
+                    if (!data) return "";
+
+                    let date = new Date(data);
+                    let day = ("0" + date.getDate()).slice(-2);
+                    let month = ("0" + (date.getMonth() + 1)).slice(-2);
+                    let year = date.getFullYear();
+
+                    return `${day}-${month}-${year}`;
+                }
+            },
+            {
+                data: "id",
+                render: function (id, type, row) {
+                    /*added to disable batches have sales,choose this or the one used at backend(update/deletecodes)*/
+                    const disabled = row.has_sales ? "disabled" : "";
+                    const tooltip = row.has_sales ? "title='Cannot edit/delete: Sales exist'" : "";
+                    /*added to dis able batches have sales*/
+                    return `
+                    <button class="btn btn-warning btn-sm edit-btn" ${disabled} ${tooltip}
+                            data-id="${id}"
+                            data-medicine="${row.medicine_id}"  // KEEP ID (for editing)
+                            data-medicine-name="${row.medicine_name}" // OPTIONAL - if you want to display name in modal
+                            data-batch="${row.batch_number}"
+                            data-quantity="${row.quantity}"
+                            data-costp="${row.cost_price}"
+                            data-sellingp="${row.selling_price}"
+                            data-edate="${row.expiry_date}"
+                            data-adate="${row.date_added}">
+                        Edit
+                    </button>
+
+                    <button class="btn btn-danger btn-sm delete-btn" ${disabled} ${tooltip}
+                            data-id="${id}">
+                        Delete
+                    </button>
+                `;
+            }
+        }
+    ]
+});
+
+
+    // ADD MEDICINE
+    $("#batchForm").submit(function (e) {
+        e.preventDefault();
+        //medicine, batch, quantity, costp, sellingp, edate
+        const medicine = $("#medicine").val().trim();
+        const batch = $("#batch_number").val().trim();
+        const quantity = $("#quantity").val().trim();
+        const costp = $("#cost_price").val().trim();
+        const sellingp = $("#selling_price").val().trim();
+        const edate = $("#expiry_date").val().trim();
+
+    // Ensure name contains at least one letter
+      /* if (!/[a-zA-Z]/.test(name)) {
+            Swal.fire("Error", "Medicine name must contain at least one letter!", "error");
+            return;  // stop submission
+        }*/
+    // Validation: price must be a number > 0
+        if (!quantity || isNaN(quantity) || Number(quantity) <= 0) {
+            Swal.fire("Error", "Please enter a valid quantity!", "error");
+            return;
+        }
+
+    // If validations pass, send AJAX
+        $.ajax({
+            url: "{% url 'batchmedics_add' %}",
+            method: "POST",
+            data: {//medicine, batch, quantity, costp, sellingp, edate
+                medicine: $("#medicine").val(),
+                batch: $("#batch_number").val(),
+                quantity: $("#quantity").val(),
+                costp: $("#cost_price").val(),
+                sellingp: $("#selling_price").val(),
+                edate: $("#expiry_date").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            success: function (response) {
+                if (response.status === "success") {
+                    Swal.fire("Added!", response.message, "success");
+                    $("#batchModal").modal("hide");
+                    $("#batchForm")[0].reset();
+                    table.ajax.reload();
+                } else {
+                    Swal.fire("Error", response.message, "error");
+                }
+            }
+        });
+    });
+
+
+    // OPEN EDIT MODAL
+$("#batchTable").on("click", ".edit-btn", function () {
+//id,medicine,batch,quantity,costp,sellingp,edate
+    $("#edit_id").val($(this).data("id"));
+   // $("#edit_name").val($(this).data("medicine"));
+    $("#edit_batch_number").val($(this).data("batch"));
+    $("#edit_quantity").val($(this).data("quantity"));
+    $("#edit_cost_price").val($(this).data("costp"));
+    $("#edit_selling_price").val($(this).data("sellingp"));
+    $("#edit_expiry_date").val($(this).data("edate"));
+    // Set dropdown values
+    $("#edit_medicine").val($(this).data("medicine"));
+    $("#editbatchModal").modal("show");
+});
+
+    // UPDATE MEDICINE
+    $("#editbatchForm").submit(function (e) {
+        e.preventDefault();
+        const medicine = $("#edit_medicine").val().trim();
+        const batch = $("#edit_batch_number").val().trim();
+        const quantity = $("#edit_quantity").val().trim();
+        const costp = $("#edit_cost_price").val().trim();
+        const sellingp = $("#edit_selling_price").val().trim();
+        const edate = $("#edit_expiry_date").val().trim();
+
+       /* if (!/[a-zA-Z]/.test(batch)) {
+            Swal.fire("Error", "Medicine name must contain at least one letter!", "error");
+            return;
+        }*/
+
+        if (!quantity || isNaN(quantity) || Number(quantity) <= 0) {
+            Swal.fire("Error", "Please enter a valid number!", "error");
+            return;
+        }
+        $.ajax({
+            url: "/batchmedics/update/" + $("#edit_id").val() + "/",
+            method: "POST",
+            data: {  //medicine, batch, quantity, costp, sellingp, edate
+                medicine: $("#edit_medicine").val(),
+                batch: $("#edit_batch_number").val(),
+                quantity: $("#edit_quantity").val(),
+                costp: $("#edit_cost_price").val(),
+                sellingp: $("#edit_selling_price").val(),
+                edate: $("#edit_expiry_date").val(),
+                csrfmiddlewaretoken: csrftoken
+            },
+            /*Previous works out
+            success: function (response) {
+                Swal.fire("Updated!", response.message, "success");
+
+                $("#editbatchModal").modal("hide");
+                table.ajax.reload();
+            }*/
+                success: function (response) {
+                if (response.status === "error") {
+                    Swal.fire("Blocked!", response.message, "error");
+                    return;  // stop further action
+                }
+                Swal.fire("Success!", response.message, "success");
+                $("#editbatchModal").modal("hide");
+                table.ajax.reload();
+            }
+
+        });
+    });
+
+    // DELETE MEDICINE
+    $("#batchTable").on("click", ".delete-btn", function () {
+        let id = $(this).data("id");
+
+        Swal.fire({
+            title: "Are you sure?",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Delete Batch"
+        }).then((res) => {
+            if (res.isConfirmed) {
+                $.ajax({
+                    url: "/batchmedics/delete/" + id + "/",
+                    method: "POST",
+                    data: {
+                        csrfmiddlewaretoken: csrftoken
+                    },
+                   /* Previous works out
+                   success: function () {
+                        Swal.fire("Deleted!", "Batch removed", "success");
+                        table.ajax.reload();
+                    }*/
+                   success: function (response) {
+                        if (response.status === "error") {
+                            Swal.fire("Blocked!", response.message, "error");
+                            return;  // stop further action
+                        }
+                        Swal.fire("Success!", response.message, "success");
+                        table.ajax.reload();
+                    }
+
+                });
+            }
+        });
+    });
+
+});
+</script>
+<!--BATCH-->
+
+<!--SELLS MEDICINES-->
+
+<script>
+$(document).ready(function () {
+
+/*   // Load & refresh sales table
+let salesTable;
+
+function loadSalesTable() {
+    if ($.fn.DataTable.isDataTable("#salesTable")) {
+        $("#salesTable").DataTable().clear().destroy();
+    }
+
+    salesTable = $("#salesTable").DataTable({
+        ajax: {
+            url: "/api/sales/",
+            dataSrc: ""
+        },
+        order: [[0, "desc"]],
+        columns: [
+            { data: "date" },
+            { data: "medicine" },
+            { data: "batch" },
+            { data: "qty" },
+            { data: "customer" },
+            { data: "sold_by" },
+            {
+                data: "id",
+                render: function(id) {
+                    return `
+                        <button class="btn btn-warning btn-sm" onclick="openEditSale(${id})">Edit</button>
+                         <button class="btn btn-danger btn-sm" onclick="deleteSale(${id})">Delete</button>
+                    `;
+                }
+            }
+        ]
+    });
+}
+
+loadSalesTable();*/
+
+//✅ 🔥 FINAL FRONT-END LOCK / VOID SYSTEM — DROP-IN CODE(REPLACED THAT ONE ABOVE)
+// =============================================
+// SALE TABLE WITH LOCK / VOID / UNLOCK SUPPORT
+// =============================================
+
+let salesTable;
+
+// Refresh table
+function loadSalesTable() {
+    if ($.fn.DataTable.isDataTable("#salesTable")) {
+        $("#salesTable").DataTable().clear().destroy();
+    }
+
+    salesTable = $("#salesTable").DataTable({
+        ajax: {
+            url: "/api/sales/",
+            dataSrc: ""
+        },
+        order: [[0, "desc"]],
+        columns: [
+            { data: "date" },
+            { data: "medicine" },
+            { data: "batch" },
+            { data: "qty" },
+            { data: "customer" },
+            { data: "sold_by" },
+
+            // STATUS BADGE
+            {
+                data: null,
+                render: function(row) {
+                    if (row.void) return `<span class="badge bg-danger">VOIDED</span>`;
+                    if (row.locked) return `<span class="badge bg-warning text-dark">LOCKED</span>`;
+                    return `<span class="badge bg-success">ACTIVE</span>`;
+                }
+            },
+
+            // ACTION BUTTONS
+            {
+                data: null,
+                render: function(row) {
+                    
+                    // If VOIDED: no actions allowed
+                    if (row.void) {
+                        return `<span class="text-muted">VOIDED</span>`;
+                    }
+
+                    // If LOCKED: only admin can unlock
+                    if (row.locked) {
+                        return `
+                            <button class="btn btn-secondary btn-sm" disabled>Edit</button>
+                            <button class="btn btn-secondary btn-sm" disabled>Void</button>
+                            <button class="btn btn-warning btn-sm" onclick="adminUnlock(${row.sale_id})">
+                                🔓 Unlock
+                            </button>
+                        `;
+                    }
+
+                    // ACTIVE sale: normal actions
+                    return `
+                        <button class="btn btn-warning btn-sm" onclick="openEditSale(${row.id})">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="voidSale(${row.id})">Void</button>
+                    `;
+                }
+            }
+        ]
+    });
+}
+
+loadSalesTable();
+setInterval(loadSalesTable, 60000);
+
+
+ 
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+        let cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+            cookie = cookie.trim();
+            if (cookie.startsWith(name + '=')) {
+                cookieValue = cookie.substring(name.length + 1);
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+  
+
+ $("#openSellModalBtn").click(function() {
+        $("#sellModal").modal("show");
+        loadMedicines();   // load medicine list every time modal opens
+    });   
+
+// --------------------------
+// 1️⃣ Cart array
+// --------------------------
+let cart = [];
+
+
+// --------------------------
+// 2️⃣ Load medicines when modal opens
+// --------------------------
+window.loadMedicines = function() {
+    $.get("/api/medicines/", function(data) {
+        $("#sell_medicine").empty().append(`<option value="">Select...</option>`);
+        data.forEach(m => {
+            $("#sell_medicine").append(`<option value="${m.id}">${m.name}</option>`);
+        });
+    });
+};
+
+
+// --------------------------
+// 3️⃣ Load batches for selected medicine
+// --------------------------
+$("#sell_medicine").change(function() {
+    let med_id = $(this).val();
+
+    $.get(`/api/medicine_batches/${med_id}/`, function(data) {
+        $("#sell_batch").empty().append(`<option value="">Select Batch...</option>`);
+
+        data.forEach(b => {
+            $("#sell_batch").append(
+                `<option value="${b.id}" 
+                         data-price="${b.selling_price}"
+                         data-remaining="${b.quantity_remaining}">
+                         ${b.batch_number} (Remaining: ${b.quantity_remaining})
+                 </option>`
+            );
+        });
+    });
+});
+
+
+// --------------------------
+// 4️⃣ Add item to cart (prevent duplicate batches)
+// --------------------------
+$("#addToCartBtn").click(function() {
+    let batch_id = $("#sell_batch").val();
+    let batch_option = $("#sell_batch option:selected");
+    let medicine_id = $("#sell_medicine").val();
+    let medicine_name = $("#sell_medicine option:selected").text();
+    let batch_name = batch_option.text();
+    let qty = parseInt($("#sell_qty").val());
+    let price = parseFloat(batch_option.data("price"));
+    let remaining = parseInt(batch_option.data("remaining"));
+
+    if (!batch_id || qty <= 0) {
+        Swal.fire("Error", "Please select batch and valid quantity", "error");
+        return;
+    }
+
+    if (qty > remaining) {
+        Swal.fire("Stock Error", "Quantity exceeds remaining stock!", "warning");
+        return;
+    }
+
+    // ❌ STOP if this batch already exists in cart
+    let batchExists = cart.some(item => item.batch_id == batch_id);
+
+    if (batchExists) {
+        Swal.fire("Duplicate Batch!", 
+                  "This batch is already added to the cart. You cannot add it twice.", 
+                  "warning");
+        return;
+    }
+
+    let total = qty * price;
+
+    cart.push({
+        batch_id: batch_id,
+        medicine_id: medicine_id,  // optional but good for backend
+        medicine: medicine_name,
+        batch_name: batch_name,
+        quantity: qty,
+        unit_price: price,
+        total: total
+    });
+
+    renderCart();
+});
+
+
+// --------------------------
+// 5️⃣ Render cart table
+// --------------------------
+function renderCart() {
+    let tbody = $("#cartTable tbody");
+    tbody.empty();
+    let sum = 0;
+
+    cart.forEach((item, idx) => {
+        sum += item.total;
+
+        tbody.append(`
+            <tr>
+                <td>${item.medicine}</td>
+                <td>${item.batch_name}</td>
+                <td>${item.quantity}</td>
+                <td>${item.unit_price}</td>
+                <td>${item.total}</td>
+                <td><button class="btn btn-danger btn-sm" onclick="removeItem(${idx})">X</button></td>
+            </tr>
+        `);
+    });
+
+    $("#total_amount").val(sum);
+}
+
+window.removeItem = function(index) {
+    cart.splice(index, 1);
+    renderCart();
+};
+
+
+// --------------------------
+// 6️⃣ Submit sale
+// --------------------------
+$("#submitSaleBtn").click(function() {
+
+    if (cart.length === 0) {
+        Swal.fire("Error", "Cart is empty", "error");
+        return;
+    }
+     
+    let customer = $("#customer_name").val().trim();
+    let paid = $("#paid_amount").val().trim();
+    let total = parseFloat($("#total_amount").val());
+
+    // VALIDATIONS
+    if (customer === "") {
+        Swal.fire("Missing Field", "Customer name cannot be empty.", "warning");
+        return;
+    }
+
+    if (paid === "" || isNaN(paid)) {
+        Swal.fire("Invalid Input", "Paid amount must be a valid number.", "warning");
+        return;
+    }
+
+    paid = parseFloat(paid);
+
+    if (paid < 0) {
+        Swal.fire("Invalid Amount", "Paid amount cannot be negative.", "warning");
+        return;
+    }
+
+    if (paid > total) {
+        Swal.fire("Invalid Payment", "Paid amount cannot exceed total amount.", "warning");
+        return;
+    }
+
+    // If validations pass → proceed
+
+    let payload = {
+        customer_name: $("#customer_name").val(),
+        paid_amount: $("#paid_amount").val(),
+        total_amount: $("#total_amount").val(),
+        items: cart
+    };
+
+    $.ajax({
+        url: "/medicines/addsale/",
+        method: "POST",
+        data: JSON.stringify(payload),
+        contentType: "application/json",
+        headers: { "X-CSRFToken": getCookie("csrftoken") },
+
+        success: function(response) {
+            if (response.status === "success") {
+                Swal.fire("Success", "Sale completed! Balance: " + response.balance, "success");
+
+                cart = [];
+                renderCart();
+                $("#sellModal").modal("hide");
+
+                loadSalesTable(); // ⬅ Refresh sales table
+            }
+        }
+    }); 
+
+});
+
+ //Open Edit Modal
+  window.openEditSale = function(item_id) {
+
+    $.get(`/api/sales/fullget/${item_id}/`, function(data) {
+        //ADDED TO — MODIFY YOUR EDIT FLOW (block locked/void)
+         if (data.locked) {
+            Swal.fire("Locked", "This sale is locked and cannot be edited.", "warning");
+            return;
+        }
+
+        if (data.void) {
+            Swal.fire("Voided", "This sale is voided and cannot be edited.", "error");
+            return;
+        }
+        //ADDED TO — MODIFY YOUR EDIT FLOW (block locked/void)
+
+        $("#edit_saleitem_id").val(data.sale_item_id);
+        $("#edit_sale_id").val(data.sale_id);
+
+        $("#edit_customer").val(data.customer);
+        $("#edit_paid").val(data.paid_amount);
+
+        // Load medicines
+        $.get("/api/medicines/", function(meds) {
+
+            $("#edit_medicine").empty();
+            meds.forEach(m => {
+                $("#edit_medicine").append(`<option value="${m.id}">${m.name}</option>`);
+            });
+
+            $("#edit_medicine").val(data.medicine_id);
+
+            loadEditBatches(data.medicine_id, data.batch_id);
+        });
+
+        $("#edit_qty").val(data.qty);
+
+        $("#editSaleModal").modal("show");
+    });
+};
+
+//Load batches dynamically
+function loadEditBatches(med_id, selected_batch_id=null) {
+    $.get(`/api/medicine_batches/${med_id}/`, function(batches) {
+
+        $("#edit_batch").empty();
+        batches.forEach(b => {
+            $("#edit_batch").append(`
+                <option value="${b.id}">${b.batch_number} (Remaining: ${b.quantity_remaining})</option>
+            `);
+        });
+
+        if (selected_batch_id !== null)
+            $("#edit_batch").val(selected_batch_id);
+    });
+}
+
+
+
+//Save Edited Sale
+window.saveEditedSale = function() {
+
+    let item_id = $("#edit_saleitem_id").val();
+    let payload = {
+        customer: $("#edit_customer").val(),
+        paid_amount: $("#edit_paid").val(),
+        medicine_id: $("#edit_medicine").val(),
+        batch_id: $("#edit_batch").val(),
+        qty: $("#edit_qty").val()
+    };
+
+    $.ajax({
+        url: `/api/sales/fullupdate/${item_id}/`,
+        method: "POST",
+        contentType: "application/json",
+        headers: { "X-CSRFToken": getCookie("csrftoken") },
+        data: JSON.stringify(payload),
+
+        success: function(res) {
+            if (res.status === "success") {
+                Swal.fire("Updated!", "Sale updated successfully.", "success");
+                $("#editSaleModal").modal("hide");
+                loadSalesTable();
+            } else {
+                Swal.fire("Error", res.message, "error");
+            }
+        }
+    });
+};
+
+//⭐ STEP 5 — ADMIN UNLOCK BUTTON
+window.adminUnlock = function(sale_id) {
+
+    Swal.fire({
+        title: "Unlock Sale?",
+        text: "Admin override will allow editing this locked sale.",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonText: "Unlock"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.get(`/api/sales/unlock/${sale_id}/`, function(res) {
+                Swal.fire("Unlocked", res.message, "success");
+                loadSalesTable();
+            });
+        }
+    });
+};
+
+
+    //delete option
+     /* window.deleteSale = function(id) {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "This will delete the sale and restore the stock.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, delete"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: `/api/sales/delete/${id}/`,
+                method: "POST",
+                headers: { "X-CSRFToken": getCookie("csrftoken") },
+                success: function(res) {
+                    if (res.status === "success") {
+                        Swal.fire("Deleted!", "Sale removed successfully.", "success");
+                        loadSalesTable();
+                    }
+                }
+            });
+        }
+    });
+};*/
+//⭐ STEP 4 — REPLACE deleteSale() WITH voidSale() REPLACED THE ABOVE DELETE
+window.voidSale = function(id) {
+    Swal.fire({
+        title: "Void Sale?",
+        text: "This will mark the sale as VOID. Stock will be restored.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Void Sale"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: `/api/sales/delete/${id}/`,
+                method: "POST",
+                headers: { "X-CSRFToken": getCookie("csrftoken") },
+                success: function(res) {
+                    Swal.fire("Success", "Sale voided", "success");
+                    loadSalesTable();
+                }
+            });
+        }
+    });
+};
+
+
+
+//delete
+
+
+
+
+});
+</script>
+<!--SELLS MEDICINES-->
+
+</body>
+
+</html>

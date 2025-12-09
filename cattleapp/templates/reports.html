@@ -1,0 +1,107 @@
+{% extends "adminpanel.html" %}
+{% load static %}
+
+{% block content %}
+
+<h3 class="fw-bold mb-4">Reports & Analytics</h3>
+
+<div class="row g-3">
+
+    <!-- SALES SUMMARY -->
+    <div class="col-md-12">
+        <div class="card p-3">
+
+            <h5 class="fw-bold mb-3">Sales Summary</h5>
+
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <label>Date From</label>
+                    <input id="fromDate" type="date" class="form-control">
+                </div>
+
+                <div class="col-md-3">
+                    <label>Date To</label>
+                    <input id="toDate" type="date" class="form-control">
+                </div>
+
+                <div class="col-md-2">
+                    <label>&nbsp;</label>
+                    <button id="filterSalesBtn" class="btn btn-primary w-100">
+                        <i class="bi bi-filter"></i> Filter
+                    </button>
+                </div>
+            </div>
+
+            <canvas id="salesSummaryChart" height="80"></canvas>
+
+        </div>
+    </div>
+
+
+    <!-- PROFIT CHART -->
+    <div class="col-md-6 mt-4">
+        <div class="card p-3">
+            <h5 class="fw-bold">Profit Analysis</h5>
+            <canvas id="profitChart" height="100"></canvas>
+        </div>
+    </div>
+
+    <!-- TOP SELLING -->
+    <div class="col-md-6 mt-4">
+        <div class="card p-3">
+            <h5 class="fw-bold">Top Selling Medicines</h5>
+            <canvas id="topSellingChart" height="100"></canvas>
+        </div>
+    </div>
+</div>
+
+
+<!-- ======================== DETAILED TABLES ======================== -->
+
+<div class="card mt-4 p-3">
+    <h5 class="fw-bold mb-3">Inventory Report</h5>
+
+    <table id="inventoryTable" class="table table-striped table-bordered">
+        <thead class="table-light">
+            <tr>
+                <th>Medicine</th>
+                <th>Total Quantity</th>
+                <th>Remaining</th>
+                <th>Low Stock</th>
+                <th>Expired</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for m in inventory %}
+            <tr>
+                <td>{{ m.name }}</td>
+                <td>{{ m.total_qty }}</td>
+                <td>{{ m.remaining }}</td>
+                <td>{% if m.remaining <= m.reorder_level %}YES{% else %}NO{% endif %}</td>
+                <td>{{ m.expired }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.0/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.0/js/buttons.html5.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.0/js/buttons.print.min.js"></script>
+
+<script src="{% static 'js/report.js' %}"></script>
+
+<script>
+    const salesSummaryURL = "{% url 'report_sales_summary' %}";
+    const profitSummaryURL = "{% url 'report_profit_summary' %}";
+    const topSellingURL = "{% url 'report_top_selling' %}";
+</script>
+
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Staff Management{% endblock %}
+
+{% block content %}
+<h3 class="fw-bold mb-4">Staff Management</h3>
+
+<!-- Add Staff Button -->
+<button class="btn btn-success mb-3" data-bs-toggle="modal" data-bs-target="#staffModal" onclick="resetStaffForm();">
+    Add New Staff
+</button>
+
+<!-- Staff Modal -->
+<div class="modal fade" id="staffModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Register / Edit Staff</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="staffForm" method="POST" action="{% url 'add_staff_ajax' %}">
+                    {% csrf_token %}
+
+                    <div class="card mb-3">
+                        <div class="card-header">Staff Information</div>
+                        <div class="card-body">
+
+                            <div class="row">
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Name</label>
+                                    <input type="text" name="name" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Phone</label>
+                                    <input type="text" name="phone" class="form-control" required>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Role</label>
+                                    <select name="role" class="form-control" required>
+                                        <option value="" disabled selected>Select Role</option>
+                                        <option value="Herdsman">Herdsman</option>
+                                        <option value="Milking Operator">Milking Operator</option>
+                                        <option value="Cleaner">Cleaner</option>
+                                        <option value="Veterinary">Veterinary</option>
+                                        <option value="Manager">Manager</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label>Status</label>
+                                    <select name="is_active" class="form-control">
+                                        <option value="True">Active</option>
+                                        <option value="False">Inactive</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-12 mb-3">
+                                    <label>Address</label>
+                                    <textarea name="address" rows="2" class="form-control"></textarea>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <button type="submit" id="staffSubmitBtn" class="btn btn-primary w-100">
+                        Save Staff
+                    </button>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Staff List -->
+<div class="card">
+    <div class="card-header bg-success text-white">Registered Staff</div>
+    <div class="card-body">
+        <table id="staffTable" class="table table-bordered table-striped" style="width:100%">
+            <thead class="table-success">
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'cow/css/dataTables.bootstrap5.min.css' %}">
+<link rel="stylesheet" href="{% static 'cow/css/buttons.bootstrap5.min.css' %}">
+
+<style>
+.dataTables_wrapper .dt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.dt-buttons .btn-success {
+    background-color: #28a745 !important;
+    color: white !important;
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'cow/js/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'cow/js/sweetalert2@11' %}"></script>
+
+<!-- DataTables -->
+<script src="{% static 'cow/js/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'cow/js/dataTables.bootstrap5.min.js' %}"></script>
+
+<!-- Buttons -->
+<script src="{% static 'cow/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.bootstrap5.min.js' %}"></script>
+<script src="{% static 'cow/ajax/jszip.min.js' %}"></script>
+<script src="{% static 'cow/ajax/pdfmake.min.js' %}"></script>
+<script src="{% static 'cow/ajax/vfs_fonts.js' %}"></script>
+<script src="{% static 'cow/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'cow/js/buttons.print.min.js' %}"></script>
+
+<script>
+$(document).ready(function () {
+
+    const csrftoken = document.cookie.split("; ")
+        .find(r => r.startsWith("csrftoken=")).split("=")[1];
+
+    // DATATABLE INITIALIZATION
+    let staffTable = $('#staffTable').DataTable({
+        responsive: true,
+        pageLength: 5,
+
+        dom:
+            "<'dt-header'<'row'<'col-sm-3'l><'col-sm-6'B><'col-sm-3'f>>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-5'i><'col-sm-7'p>>",
+
+        buttons: [
+            { extend: 'copy', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'excel', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'pdf', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } },
+            { extend: 'print', className: 'btn btn-success', exportOptions: { columns: ':not(:last-child)' } }
+        ],
+
+        columns: [
+            { data: null },  
+            { data: "name" },
+            { data: "phone" },
+            { data: "role" },
+            {
+                data: "is_active",
+                render: function (data) {
+                    return data ? 
+                        '<span class="badge bg-success">Active</span>' : 
+                        '<span class="badge bg-danger">Inactive</span>';
+                }
+            },
+            {
+                data: null,
+                defaultContent: `
+                    <button class="btn btn-sm btn-primary edit-staff">Edit</button>
+                    <button class="btn btn-sm btn-danger delete-staff">Delete</button>
+                `
+            }
+        ],
+
+        rowCallback: function (row, data, index) {
+            let info = staffTable.page.info();
+            $('td:eq(0)', row).html(info.start + index + 1);
+        }
+    });
+
+    // LOAD STAFF
+    function loadStaff() {
+        $.get("{% url 'fetch_staff' %}", function (data) {
+            staffTable.clear().rows.add(data).draw();
+        });
+    }
+    loadStaff();
+
+    // RESET FORM
+    window.resetStaffForm = function () {
+        $("#staffForm")[0].reset();
+        $("#staffSubmitBtn").text("Save Staff")
+            .removeClass("btn-success")
+            .addClass("btn-primary");
+        $("#staffForm").off("submit").on("submit", addStaff);
+    }
+
+    // ADD STAFF
+    function addStaff(e) {
+        e.preventDefault();
+        $.ajax({
+            url: "{% url 'add_staff_ajax' %}",
+            method: "POST",
+            headers: { "X-CSRFToken": csrftoken },
+            data: $("#staffForm").serialize(),
+            success: function (resp) {
+                $("#staffModal").modal("hide");
+                loadStaff();
+                Swal.fire("Success", resp.message, "success");
+                resetStaffForm();
+            }
+        });
+    }
+
+    // EDIT STAFF
+$("#staffTable tbody").on("click", ".edit-staff", function () {
+
+    let staff = staffTable.row($(this).parents("tr")).data();
+    let id = staff.id;
+
+    // FETCH SINGLE STAFF
+    $.get(`/staff/get/${id}/`, function (data) {
+
+        $("[name='name']").val(data.name);
+        $("[name='phone']").val(data.phone);
+        $("[name='role']").val(data.role);
+        $("[name='address']").val(data.address);
+        $("[name='is_active']").val(data.is_active ? "True" : "False");
+
+        $("#staffModal").modal("show");
+
+        // Set button for update
+        $("#staffSubmitBtn")
+            .text("Update Staff")
+            .removeClass("btn-primary")
+            .addClass("btn-success");
+
+        // Remove old submit and set new update handler
+        $("#staffForm").off("submit").on("submit", function (e) {
+            e.preventDefault();
+
+            $.ajax({
+                url: `/staff/update/${id}/`,
+                method: "POST",
+                headers: { "X-CSRFToken": csrftoken },
+                data: $(this).serialize(),
+                success: function (resp) {
+                    $("#staffModal").modal("hide");
+                    loadStaff();
+                    Swal.fire("Updated!", resp.message, "success");
+                    resetStaffForm();
+                }
+            });
+        });
+    });
+});
+
+    // DELETE STAFF
+    $("#staffTable tbody").on("click", ".delete-staff", function () {
+        let staff = staffTable.row($(this).parents("tr")).data();
+        let id = staff.id;
+
+        Swal.fire({
+            title: `Delete ${staff.name}?`,
+            text: "This action cannot be undone.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "Yes, delete",
+            confirmButtonColor: "#d33"
+        }).then(result => {
+
+            if (result.isConfirmed) {
+                $.post(`/staff/delete/${id}/`,
+                    { csrfmiddlewaretoken: csrftoken },
+                    function (resp) {
+                        loadStaff();
+                        Swal.fire("Deleted", resp.message, "success");
+                    }
+                );
+            }
+        });
+    });
+
+});
+</script>
+{% endblock %}
