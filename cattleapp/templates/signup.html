@@ -13,7 +13,8 @@
   <style>
     /*suspended for now its only one image/now we use those three down*/
     body {
-    background: url('/static/images/cow1.jpg') no-repeat center center/cover;
+    /*background: url('/static/images/cow1.jpg') no-repeat center center/cover;*/
+    background: url("{% static 'images/cow1.jpg' %}") no-repeat center center/cover;
     min-height: 100vh;
     font-family: 'Segoe UI', sans-serif;
     padding-top: 70px;
@@ -169,9 +170,12 @@ body::before {
 <body>
 <!-- Animated cow background -->
 <div class="cow-bg">
-    <img src="/static/images/cow1.jpg" class="cow cow1" alt="cow">
+    <!--<img src="/static/images/cow1.jpg" class="cow cow1" alt="cow">
     <img src="/static/images/cow2.jpg" class="cow cow2" alt="cow">
-    <img src="/static/images/cow3.jpg" class="cow cow3" alt="cow">
+    <img src="/static/images/cow3.jpg" class="cow cow3" alt="cow">-->
+    <img src="{% static 'images/cow1.jpg' %}" class="cow cow1" alt="cow">
+    <img src="{% static 'images/cow2.jpg' %}" class="cow cow2" alt="cow">
+    <img src="{% static 'images/cow3.jpg' %}" class="cow cow3" alt="cow">
 </div>
 
   <!-- NAVBAR -->
