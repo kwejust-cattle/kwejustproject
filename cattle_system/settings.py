@@ -88,14 +88,11 @@ WSGI_APPLICATION = 'cattle_system.wsgi.application'
 
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'railway',                # MYSQLDATABASE from Railway
-        'USER': 'root',                    # MYSQLUSER
-        'PASSWORD': 'ZorRIPAaiQXAtRMEmvbxUerYmMQcNfvS',  # MYSQLPASSWORD
-        'HOST': 'shinkansen.proxy.rlwy.net',  # Railway Public TCP host
-        'PORT': '17888',                    # Railway Proxy Port
-    }
+    'default': dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True
+    )
 }
 
 
